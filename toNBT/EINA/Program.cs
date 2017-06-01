@@ -23,8 +23,28 @@ namespace EINA
             NbtWorld world = AnvilWorld.Create(dest);
 
             world.Level.LevelName = "EINA";
-            world.Level.Spawn = new SpawnPoint(20, 70, 20);
+            world.Level.Spawn = new SpawnPoint(20, 90, 20);
             world.Level.GameType = GameType.CREATIVE;
+            world.Level.Initialized = true;
+
+
+            Player p = new Player();
+
+            p.Position.X = 500;
+            p.Position.Y = 76;
+            p.Position.Z = 275;
+
+
+            p.Spawn = new SpawnPoint(20, 90, 20);
+            
+            world.Level.Player = p;
+
+            world.Level.Player.Spawn = new SpawnPoint(20, 90, 20);
+            world.Level.Player.GameType = PlayerGameType.Creative;
+            
+
+            IPlayerManager pm = world.GetPlayerManager();
+            pm.SetPlayer("Player",p);
 
            
             IChunkManager cm = world.GetChunkManager();
@@ -47,6 +67,7 @@ namespace EINA
                 int z = Int32.Parse(words[2]);
                 int xLocal = x/32;
                 int yLocal = y/32;
+                //System.Console.WriteLine(xLocal+"  "+yLocal);
         
 
                 if(!cm.ChunkExists(xLocal,yLocal)){
@@ -63,7 +84,6 @@ namespace EINA
                     chunk.Blocks.RebuildBlockLight();
                     chunk.Blocks.RebuildSkyLight();
                     //System.Console.WriteLine(chunk.IsDirty);
-                    //System.Console.WriteLine("Creando "+xLocal+"  "+yLocal);
                     chunk.Blocks.SetID(x%16, z + 64, y%16, (int)BlockType.STONE);
                 }else{
                     //chunk = cm.GetChunkRef(xLocal,yLocal);
