@@ -12,7 +12,7 @@ coords = np.vstack((inFile.x, inFile.y, inFile.z))
 
 print("Extrayendo la zona del EINA")
 keep_points = coords[0] > 675500
-keep_points2 = (4616500 < coords[1]) & ( coords[1] < 4617500)
+keep_points2 = (4616500 < coords[1]) & ( coords[1] < 4617000)
 keep_points3 = keep_points & keep_points2
 
 # Grab an array of all points which meet this threshold

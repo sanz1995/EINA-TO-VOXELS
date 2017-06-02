@@ -30,9 +30,9 @@ namespace EINA
 
             Player p = new Player();
 
-            p.Position.X = 500;
+            p.Position.X = 0;
             p.Position.Y = 76;
-            p.Position.Z = 275;
+            p.Position.Z = 0;
 
 
             p.Spawn = new SpawnPoint(20, 90, 20);
@@ -65,8 +65,9 @@ namespace EINA
                 int x = Int32.Parse(words[0]);
                 int y = Int32.Parse(words[1]);
                 int z = Int32.Parse(words[2]);
-                int xLocal = x/32;
-                int yLocal = y/32;
+                int color = Int32.Parse(words[3]);
+                int xLocal = x/16;
+                int yLocal = y/16;
                 //System.Console.WriteLine(xLocal+"  "+yLocal);
         
 
@@ -84,13 +85,18 @@ namespace EINA
                     chunk.Blocks.RebuildBlockLight();
                     chunk.Blocks.RebuildSkyLight();
                     //System.Console.WriteLine(chunk.IsDirty);
-                    chunk.Blocks.SetID(x%16, z + 64, y%16, (int)BlockType.STONE);
+                    chunk.Blocks.SetBlock(x%16, z + 64, y%16, new AlphaBlock((int)BlockType.WOOL,color));
                 }else{
                     //chunk = cm.GetChunkRef(xLocal,yLocal);
                     //System.Console.WriteLine(x%16+"  "+y%16+"  "+(z+64));
-                    chunk.Blocks.SetID(x%16, z + 64, y%16, (int)BlockType.STONE);
+                    chunk.Blocks.SetBlock(x%16, z + 64, y%16, new AlphaBlock((int)BlockType.WOOL,color));
 
                 }
+            }
+            chunk = cm.GetChunkRef(0,0);
+
+            for (int x = 0; x < 16; x++) {
+                chunk.Blocks.SetBlock(x%16, 100, 0, new AlphaBlock((int)BlockType.WOOL,x));
             }
 
             world.Save();

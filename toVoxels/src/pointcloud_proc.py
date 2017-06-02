@@ -79,15 +79,34 @@ class SparseMatrix():
                  {(x,y,z):nPoints}  Cells with zero points do not have an entry in this
                  dictionary
         """
+        
+        colors = [(221,221,221),(219,125,62),(179,80,188),(107,138,201),(177,166,39),(65,174,56),(208,132,153),(64,64,64),(154,161,161),(46,110,137),(126,61,181),(46,56,141),(79,50,31),(53,70,27),(150,52,48),(25,22,22)]
     
-        matrix = SparseMatrix({}, resolution, bcube)        
+        scores = [];
+        matrix = SparseMatrix({}, resolution, bcube)     
         for coords in coords_iterator:
             ncell = coords_to_cell(coords, resolution, bcube)
-            #print(ncell)
             if ncell in matrix.values:
-                matrix.values[ncell] += 1
+                matrix.values[ncell] += (1,0)
+                #print(matrix.values[ncell])
+                #print(coords)
+                #print("-----------")
             else:
-                matrix.values[ncell] = 1
+                
+                for color in colors:
+                    scores.append(abs((color[0]-coords[3]/255)+(color[1]-coords[4]/255)+(color[2]-coords[5]/255)))
+                
+                min = scores[0]
+                best = 0
+                for i in range(0, 15):
+                    if scores[i] < min:
+                        min = scores[i]
+                        best = i;
+                
+                
+                #print(best)
+                scores=[]
+                matrix.values[ncell] = (1,best)
         return matrix
     
     def neighbor_26(self, cell):
@@ -186,7 +205,9 @@ def coords_to_cell(coords, resolution, bcube):
     the cell occupied by those coords as a tuple
     of three integers (i,j,k)
     """
-    x,y,z = coords
+    x = coords[0]
+    y = coords[1]
+    z = coords[2]
     minx, miny, minz = bcube['min']
     maxx, maxy, maxz = bcube['max']
     #print(x)
@@ -195,6 +216,9 @@ def coords_to_cell(coords, resolution, bcube):
     assert(x >= minx and x <= maxx)
     assert(y >= miny and y <= maxy)
     assert(z >= minz and z <= maxz)
+    
+    #print(maxx - minx)
+    #print(resolution[0])
                    
     cell_size = ((maxx - minx) / resolution[0],
                  (maxy - miny) / resolution[1],
