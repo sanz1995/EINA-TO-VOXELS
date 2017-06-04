@@ -72,6 +72,7 @@ namespace EINA
         
 
                 if(!cm.ChunkExists(xLocal,yLocal)){
+                    //System.Console.WriteLine(xLocal+"  "+yLocal);
                     cm.CreateChunk(xLocal,yLocal);
                 }
                 chunk = cm.GetChunkRef(xLocal,yLocal);
