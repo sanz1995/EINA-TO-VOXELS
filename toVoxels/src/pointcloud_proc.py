@@ -80,32 +80,34 @@ class SparseMatrix():
                  dictionary
         """
         
-        colors = [(221,221,221,1),(219,125,62,1.2),(179,80,188,1.2),(107,138,201,1.1),(177,166,39,1),(65,174,56,1),(208,132,153,1.1),(64,64,64,1),(154,161,161,1),(46,110,137,1),(126,61,181,1.1),(46,56,141,1),(79,50,31,1),(53,70,27,1),(150,52,48,1.1),(25,22,22,1)]
+        colors = [(221,221,221,1),(219,125,62,1.2),(179,80,188,1.2),
+                  (107,138,201,1.2),(177,166,39,1),(65,174,56,1),
+                  (208,132,153,1.1),(64,64,64,1),(154,161,161,0.9),
+                  (46,110,137,1.2),(126,61,181,1.1),(46,56,141,1),
+                  (79,50,31,1),(53,70,27,1),(150,52,48,1.1),(25,22,22,2)]
 
         scores = [];
         matrix = SparseMatrix({}, resolution, bcube)     
         for coords in coords_iterator:
             ncell = coords_to_cell(coords, resolution, bcube)
-            if ncell in matrix.values:
-                matrix.values[ncell] += (1,0)
-                #print(matrix.values[ncell])
-                #print(coords)
-                #print("-----------")
-            else:
+            if ncell not in matrix.values:
                 
                 for color in colors:
-                    scores.append(abs((color[0]-coords[3]/256))+abs((color[1]-coords[4]/256))+abs((color[2]-coords[5]/256)))
+                    scores.append((abs((color[0]-coords[3]))+abs((color[1]-coords[4]))+abs((color[2]-coords[5])))*color[3])
                 
                 min = scores[0]
                 best = 0
                 for i in range(0, 15):
-                    if ((scores[i]*colors[i][3]) < min):
-                        min = scores[i]*colors[i][3]
-                        best = i;
+                    if (scores[i] < min):
+                        min = scores[i]
+                        best = i
+                
             
-            
+                if((best==13) | (best==5)):
+                    matrix.values[ncell] = (1,16,scores)
+                else:
+                    matrix.values[ncell] = (1,best,scores)
                 scores=[]
-                matrix.values[ncell] = (1,best)
         return matrix
     
     def neighbor_26(self, cell):
@@ -249,54 +251,10 @@ def coords_to_cell(coords, resolution, bcube):
     return ncell        
 
 
-def join(matrix):
-    new_matrix = SparseMatrix({}, matrix.resolution, matrix.bcube)
-    neighbor = 0
-    neighbor_colors = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-    
-    
-    
-    resolution = matrix.resolution
-    n=0;
-    
-    for i in range(0,resolution[0]):
-        for j in range(0,resolution[1]):
-            for k in range(0,resolution[2]):
-                if (i,j,k) in matrix.values:
-                    new_matrix.values[(i,j,k)] = (1,matrix.values[(i,j,k)][1])
-                else:
-                    for p in [-1, 1]:
-                        if(i+p,j,k) in matrix.values:
-                            neighbor_colors[matrix.values[(i+p,j,k)][1]]+=1
-                            neighbor+=1
-                        if(i,j+p,k) in matrix.values:
-                            neighbor_colors[matrix.values[(i,j+p,k)][1]]+=1
-                            neighbor+=1
-                        if(i+p,j+p,k) in matrix.values:
-                            neighbor_colors[matrix.values[(i+p,j+p,k)][1]]+=1
-                            neighbor+=1
-                            
-                        if(i-p,j-p,k) in matrix.values:
-                            neighbor_colors[matrix.values[(i-p,j-p,k)][1]]+=1
-                            neighbor+=1
-                                 
-                    if (neighbor > 3):
-                        n+=1
-                        new_matrix.values[(i,j,k)] = (1,neighbor_colors.index(max(neighbor_colors)))
-                    neighbor_colors = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-                    neighbor = 0  
-    print(n)
-    return new_matrix
 
 
-def deleteIsolated(matrix):
-    resolution = matrix.resolution
-    for i in range(0,resolution[0]):
-        for j in range(0,resolution[1]):
-            for k in range(0,resolution[2]):
-                if (i,j,k) in matrix.values:
-                    if SparseMatrix.neighbor_26(matrix,(i,j,k)) == None:
-                        del matrix.values[(i,j,k)]
+
+                    
 
 
 def min_max_cells(cells):
@@ -468,6 +426,518 @@ def cells_to_boxes(cells, min_cell, max_cell):
             cube_list.extend(cells_to_boxes(cells, min_c, max_c))        
          
     return cube_list
+
+
+    
+def cluster_to_convex_hull(cluster, resolution, bcube):
+    """
+    Takes a "cluster" (a list of contiguous cells (6-neighbours)
+    with at least one cell) and returns
+    the convex hull of those cells in the given resolution grid of bcube.
+    """
+    """    
+    assert(len(cluster) > 0)            
+    points_list = []
+    for cell in cluster:
+        bounding_coords = cell_to_coords(cell, resolution, bcube)
+        #Though adding every corner of each cell should not be necessary,
+        #and will be slower, it is a safe and simple way to prevent having 
+        #only coplanar points in any conceivable circumstance
+        points_list.append(chull.Vector(bounding_coords[0], 
+                                           bounding_coords[1], 
+                                           bounding_coords[2]))
+        points_list.append(chull.Vector(bounding_coords[3], 
+                                           bounding_coords[1], 
+                                           bounding_coords[2]))
+        points_list.append(chull.Vector(bounding_coords[0], 
+                                           bounding_coords[4], 
+                                           bounding_coords[2]))
+        points_list.append(chull.Vector(bounding_coords[0], 
+                                           bounding_coords[1], 
+                                           bounding_coords[5]))
+        points_list.append(chull.Vector(bounding_coords[3], 
+                                           bounding_coords[4], 
+                                           bounding_coords[5]))
+        points_list.append(chull.Vector(bounding_coords[3], 
+                                           bounding_coords[4], 
+                                           bounding_coords[2]))
+        points_list.append(chull.Vector(bounding_coords[0], 
+                                           bounding_coords[4], 
+                                           bounding_coords[5]))
+        points_list.append(chull.Vector(bounding_coords[3], 
+                                           bounding_coords[1], 
+                                           bounding_coords[5]))
+        
+    return chull.Hull(points_list)"""
+    
+
+def cells_to_POV(cluster_list, matrix, filepath, tolerance, 
+                    min_cluster_size, cell_type, point_size,
+                    meld_boxes):
+    """
+    Takes a list of cell clusters (created from matrix),
+    and creates a text file with POV syntax.
+    
+    If cell_type is "box", it will create a union of cubes
+    per cluster with more than min_cluster_size cells. There will be a 
+    cube per each cell with more than tolerance points 
+    in it (number of points per cell must be in matrix). If meld_boxes
+    is true, it will try to create bigger cubes melding together
+    contiguous cells.
+    
+    If point_size is provided, the cells will be filled with objects
+    of this size at their centers.
+    
+    This function assumes that coords in matrix are (lon, lat, height) so
+    it will produce (lon, height, lat) when writing to POV file, in order
+    to follow POV axis conventions as OSM2POV does.
+    """
+    
+    f = open(filepath,'w')
+    if point_size:
+        cell_size = [point_size, point_size, point_size]
+    else:
+        cell_size = calculate_cell_size(matrix.resolution, matrix.bcube)
+        
+        # Not always needed, but it is just a harmless line of text if not used...
+    f.write('#declare cell_size=<{0:.2f},{1:.2f},{2:.2f}>;\n'.format(
+      cell_size[0], cell_size[2], cell_size[1]))    
+    
+    
+    for cluster in cluster_list:
+        if len(cluster) > min_cluster_size:
+            cells_in_tolerance = [cell for cell in cluster if matrix.values[cell] > tolerance]
+            # If after removing those cells with not enough points in them the cluster
+            # is smaller than min_cluster_size, we will not process it
+            if (len(cells_in_tolerance) > min_cluster_size):
+                if meld_boxes:
+                    corners = min_max_cells(cells_in_tolerance)
+                    boxes = cells_to_boxes(cells_in_tolerance, corners[:3], corners[3:])
+                    for box in boxes:
+                        mincoords = cell_to_coords(box[:3], matrix.resolution, matrix.bcube)
+                        maxcoords = cell_to_coords(box[3:], matrix.resolution, matrix.bcube)
+                        if cell_type == "sphere":
+                            f.write('  sphere {0, 0.5\n')
+                            # radius is 0.5, so we can scale with the cell_size
+                            # and have a spheroid covering the whole cell
+                            f.write('    scale cell_size\n')   # Scale before translate!
+                            f.write('    translate <{0:.2f},{1:.2f},{2:.2f}>\n'.format(
+                              mincoords[0]+(maxcoords[3]-mincoords[0])/2,                     
+                              mincoords[2]+(maxcoords[5]-mincoords[2])/2, 
+                              mincoords[1]+(maxcoords[4]-mincoords[1])/2))                                                                
+                        elif cell_type == "box":
+                            f.write('  box {{<{0:.2f},{1:.2f},{2:.2f}>,<{3:.2f},{4:.2f},{5:.2f}>\n'.format(
+                              mincoords[0],mincoords[2],mincoords[1],maxcoords[3],maxcoords[5],maxcoords[4]))
+                        elif cell_type == "cylinder":
+                            f.write('  cylinder {<0,-0.5,0>, <0,0.5,0>, 0.5\n')
+                            f.write('    scale cell_size\n')   # Scale before translate!
+                            f.write('    translate <{0:.2f},{1:.2f},{2:.2f}>\n'.format(
+                              mincoords[0]+(maxcoords[3]-mincoords[0])/2,                     
+                              mincoords[2]+(maxcoords[5]-mincoords[2])/2, 
+                              mincoords[1]+(maxcoords[4]-mincoords[1])/2))
+                        elif cell_type == "cyl-blob":
+                            f.write('  cylinder {<0,-0.5,0>, <0,0.5,0>, 0.5, 1\n')
+                            f.write('    scale cell_size*<2,1,2>\n')   # Scale before translate!
+                            f.write('    translate <{0:.2f},{1:.2f},{2:.2f}>\n'.format(
+                              mincoords[0]+(maxcoords[3]-mincoords[0])/2,                     
+                              mincoords[2]+(maxcoords[5]-mincoords[2])/2, 
+                              mincoords[1]+(maxcoords[4]-mincoords[1])/2))                            
+                        else:
+                            raise ValueError("cell_type " + cell_type + " is not valid for POV output when melding cells")
+                        f.write('  texture {texture_VOXEL}\n')
+                        # Using no_shadow prevents the "voxels" from casting shadows
+                        # If this is or not useful, will depende on the final illumination
+                        # of the scene
+                        #f.write('  no_shadow\n')
+                        f.write('}\n')                            
+                else:
+                    # NO MELDING...
+                    if cell_type == "cyl-blob":
+                        f.write('blob {\n')
+                        f.write('  threshold 0.6')
+                    else:
+                        f.write('union {\n')
+                    for cell in cells_in_tolerance:
+                        coords = cell_to_coords(cell, matrix.resolution, matrix.bcube)
+                        if cell_type == "box":
+                            f.write('  box {{<{0:.2f},{1:.2f},{2:.2f}>,<{3:.2f},{4:.2f},{5:.2f}>}}\n'.format(
+                              coords[0],coords[2],coords[1],coords[3],coords[5],coords[4]))
+                        elif cell_type == "sphere":
+                            f.write('  sphere {0, 0.5\n')
+                            # radius is 0.5, so we can scale with the cell_size
+                            # and have a spheroid covering the whole cell
+                            f.write('    scale cell_size\n')   # Scale before translate!
+                            f.write('    translate <{0:.2f},{1:.2f},{2:.2f}>}}\n'.format(
+                              coords[0]+(coords[3]-coords[0])/2,                     
+                              coords[2]+(coords[5]-coords[2])/2, 
+                              coords[1]+(coords[4]-coords[1])/2))    
+                        else:
+                            raise ValueError("cell_type " + cell_type + " is not valid for POV output when not melding cells")       
+                    f.write('  texture {texture_VOXEL}\n')
+                    # Using no_shadow prevents the "voxels" from casting shadows
+                    # If this is or not useful, will depende on the final illumination
+                    # of the scene
+                    #f.write('  no_shadow\n')
+                    f.write('}\n')                            
+    f.close()
+    
+    
+    
+def cells_to_Threejs(cluster_list, matrix, filepath, tolerance, 
+                        min_cluster_size, cell_type, point_size, 
+                        meld_boxes):
+    """
+    Takes a list of cell clusters (created from matrix),
+    and creates a JS file with Three.js syntax.
+    
+    If cell_type is "box", it will create a number of cubes
+    per cluster with more than min_cluster_size cells. There will be a 
+    cube per each cell with more than tolerance points 
+    in it (this information is contained in matrix). If meld_boxes
+    is true, it will try to create bigger cubes melding together
+    contiguous cells.
+    
+    If point_size is provided, the cells will be filled with objects
+    of this size at their centers.
+    
+    This function assumes that coords in matrix are (lon, lat, height) so
+    it will produce (lon, height, -lat) when writing to Threejs file, in order
+    to follow its axis conventions.
+    """
+    #print("hola")
+    f = open(filepath,'w')
+    
+    f.write('// tolerance = {}\n'.format(tolerance))
+    f.write('// min_cluster_size = {}\n'.format(min_cluster_size))
+    f.write('// cell_type = {}\n'.format(cell_type))
+    f.write('// meld_boxes = {}\n'.format(meld_boxes))
+    f.write('// matrix.resolution = {}\n'.format(matrix.resolution))
+    f.write('// matrix.bcube = {}\n'.format(matrix.bcube))
+    
+       
+    f.write('function RichPanoramaGrid() {\n')
+    f.write('  var RPG = {};\n')
+    
+    if point_size:
+        cell_size = [point_size, point_size, point_size]
+    else:
+        cell_size = calculate_cell_size(matrix.resolution, matrix.bcube)
+    if cell_type == "box":
+        f.write('  RPG.cellGeometry = new THREE.CubeGeometry({0:.2f},{1:.2f},{2:.2f});\n'.format(
+          cell_size[0], cell_size[2], cell_size[1]))
+    elif cell_type == "sphere":
+        pass
+        # Maybe one day I will implement this...
+    f.write('  RPG.cellPositions = new Array();\n')
+    if meld_boxes:
+        f.write('  RPG.uniformSizeCells = false;\n')
+        f.write('  RPG.cellSizes = new Array();\n')    
+    else:
+        f.write('  RPG.uniformSizeCells = true;\n')
+        
+    #print("hola1")
+    for cluster in cluster_list:
+        if len(cluster) > min_cluster_size:
+            #print("hola2")
+            cells_in_tolerance = [cell for cell in cluster if matrix.values[cell] > tolerance]
+            # If after removing those cells with not enough points in them the cluster
+            # is smaller than min_cluster_size, we will not process it
+            if (len(cells_in_tolerance) > min_cluster_size):  
+                print("hola3")
+                #print(len(cells_in_tolerance))          
+                if meld_boxes:
+                    #print("hola4")
+                    corners = min_max_cells(cells_in_tolerance)
+                    boxes = cells_to_boxes(cells_in_tolerance, corners[:3], corners[3:])
+                    for box in boxes:
+                        print("hola5")
+                        mincoords = cell_to_coords(box[:3], matrix.resolution, matrix.bcube)
+                        maxcoords = cell_to_coords(box[3:], matrix.resolution, matrix.bcube)
+                        if cell_type == "box":
+                            #print("hola6")
+                            f.write('  RPG.cellPositions.push({{x:{0:.2f}, y:{1:.2f}, z:{2:.2f}}});\n'.format(
+                              mincoords[0]+(maxcoords[3]-mincoords[0])/2,                     
+                              mincoords[2]+(maxcoords[5]-mincoords[2])/2, 
+                              -(mincoords[1]+(maxcoords[4]-mincoords[1])/2)))
+                            f.write('  RPG.cellSizes.push({{x:{0:.2f}, y:{1:.2f}, z:{2:.2f}}});\n'.format(
+                              box[3]-box[0]+1,
+                              box[5]-box[2]+1,
+                              box[4]-box[1]+1))
+                        else:
+                            print("error")
+                            raise ValueError("cell_type " + cell_type + " is not valid for Three.js output")                                        
+                else:
+                    for cell in cells_in_tolerance:
+                        print("hola7")
+                        coords = cell_to_coords(cell, matrix.resolution, matrix.bcube)
+                        if cell_type == "box":
+                            #print("hola8")
+                            f.write('  RPG.cellPositions.push({{x:{0:.2f}, y:{1:.2f}, z:{2:.2f}}});\n'.format(
+                              coords[0]+(coords[3]-coords[0])/2,                     
+                              coords[2]+(coords[5]-coords[2])/2, 
+                              -(coords[1]+(coords[4]-coords[1])/2)))
+                        else:
+                            raise ValueError("cell_type " + cell_type + " is not valid for Three.js output")                                        
+    f.write('  return RPG;\n')
+    f.write('};\n')   
+    f.write('var richPanoramaGrid = RichPanoramaGrid();\n')     
+    f.close()
+    
+
+# Warning! This procedure creates really big POV files, which render
+# really slowly, if coords_iterator has a moderately big size (e.g.
+# 10M points create a 1.1GB POV file with a rendering time close
+# to half an hour). The resulting rendered image will not have a 
+# substantially better quality than the "gridded" version produced
+# by cells_to_POV with a moderate resolution
+def points_to_POV(coords_iterator, filepath, point_size, cell_type):
+    f = open(filepath,'w')
+    if cell_type == "cyl-blob":
+        f.write('blob {\n')
+        f.write('  threshold 0.6')
+    else:
+        f.write('union {\n')
+    half_point_size = point_size / 2
+    for coords in coords_iterator:
+        x,y,z = coords
+        if cell_type == "sphere":
+            f.write('  sphere {0, 0.5\n')
+            # radius is 0.5, so we can scale with the point_size
+            f.write('    scale {0}\n'.format(point_size))   # Scale before translate!
+            f.write('    translate <{0:.2f},{1:.2f},{2:.2f}>\n'.format(x, z, y))
+            f.write('}\n')                                    
+        elif cell_type == "box":  
+            f.write('  box {{<{0:.2f},{1:.2f},{2:.2f}>,'+
+                            '<{3:.2f},{4:.2f},{5:.2f}>}}\n'.format(
+              x - half_point_size, z - half_point_size, y - half_point_size,
+              x + half_point_size, z + half_point_size, y + half_point_size))
+        elif cell_type == "cylinder":
+            f.write('  cylinder {<0,-0.5,0>, <0,0.5,0>, 0.5\n')
+            f.write('    scale {0}\n'.format(point_size))   # Scale before translate!
+            f.write('    translate <{0:.2f},{1:.2f},{2:.2f}>\n'.format(x,z,y))
+            f.write('}\n')
+        elif cell_type == "cyl-blob":
+            f.write('  cylinder {<0,-0.5,0>, <0,0.5,0>, 0.5, 1\n')
+            f.write('    scale {0}*<2,1,2>\n'.format(point_size))   # Scale before translate!
+            f.write('    translate <{0:.2f},{1:.2f},{2:.2f}>\n'.format(x,z,y))
+            f.write('}\n')
+        else:
+            raise ValueError("cell_type " + cell_type + " is not valid")
+    f.write('  texture {texture_POINT}\n')
+    # Using no_shadow prevents the points from casting shadows
+    # If this is or not useful, will depend on the final illumination
+    # of the scene
+    f.write('  no_shadow\n')
+    f.write('}\n')                            
+    f.close()
+
+# Inspired by a similar code in OSM2POV
+# origin_lat and origin_lon must be the center of the sdata bounding box
+# tests de ZGZ-Actur: origin_lat = 41.6661;  origin_lon = -0.89047
+def hack_map_projection(lon, lat, origin_lon, origin_lat):
+    """
+    Takes a pair of spherical coordinates (longitude, latitude) and
+    an arbitray origin in spherical coordinates too (origin_lon, origin_lat)
+    and returns a pair of euclidean (i.e. planar) coordinates in
+    meters as a tuple of floats (x,y) relative to origin_lon and origin_lat
+    that will be 0,0.
+    
+    It is only an approximation, not a true map projection.
+    """
+    lon_correction = 1.5
+    r_major = 6378137.0
+    
+    def lon_to_x(lon):
+        return r_major * math.radians(lon);
+    def lat_to_y(lat):
+        return r_major * math.log(math.tan(math.pi/4+math.radians(lat)/2))
+        
+    x = lon_to_x(lon - origin_lon) / lon_correction
+    y = lat_to_y(lat - origin_lat)
+    return (x,y)
+
+# Besides applying the hack map projection, we must take into consideration
+# that coordinates in POV are not in the same order X is LON, Y is HEIGHT,
+# Z is LAT
+# We also normalize heights so they start in zero
+def coords_to_hack_map_proj(coords, origin_lon, origin_lat, min_height):
+    """
+    @param coords: (lon, lat, height)
+    @return: (lon, lat, height) reprojected with hack_map_projection. 
+    Heights are normalized so they start in zero 
+    """
+    x,y = hack_map_projection(coords[0], coords[1], origin_lon, origin_lat)
+    return (x, y, coords[2] - min_height)
+
+def coords_in_bcube(coords, bcube):
+    """
+    True if and only if coords inside bcube
+    """
+    return (coords[0] >= bcube[0] and coords[0] <= bcube[3] and
+            coords[1] >= bcube[1] and coords[1] <= bcube[4] and
+            coords[2] >= bcube[2] and coords[2] <= bcube[5])
+
+def simple_text_file_generator(filepath, coord_filter = lambda coords: True,
+                               coord_transformer = lambda coords: coords):
+    """
+    Iterates over a text file composed of N lines with X Y Z producing
+    tuples (X,Y,Z), where X,Y and Z are already converted to float numbers
+    
+    coord_filter may be used to discard some coords for any reason. By
+    default all coords are used
+    
+    coord_transformer will possibly be a coord reprojector, and is used
+    on every tuple of coords read before yielding it. By default
+    it does nothing to the coords 
+    """
+    # The use of with makes sure that the file will be closed in the end
+    with open(filepath,'r') as f:
+        for line in f:        
+            coords = [float(coord) for coord in line.split()]
+            if coord_filter(coords):                        
+                yield coord_transformer(coords)        
+
+def main():
+    init_time = time.time()
+    parser = argparse.ArgumentParser(description="Process cloud point file. BE CAREFUL, NOT EVERY"+
+                                     " PARAMETER COMBINATION IS IMPLEMENTED, EVEN IF IT WOULD MAKE SENSE")
+    
+    parser.add_argument("input_file", help="The input file")
+    parser.add_argument("output_file",help="The output file")
+        
+    parser.add_argument("--origin-lon", dest="origin_lon", type=float, default="0.0",
+                      help="LONGITUDE for the center of the world", metavar="LONGITUDE")
+    parser.add_argument("--origin-lat", dest="origin_lat", type=float, default="0.0",
+                      help="LATITUDE for the center of the world", metavar="LATITUDE")
+    parser.add_argument("--bcube", dest="bcube", type=float, nargs=6, 
+                        default=(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0), 
+                        metavar=("LON-MIN", "LAT-MIN", "HEIGHT-MIN", 
+                                 "LON-MAX", "LAT-MAX", "HEIGHT-MAX"), 
+                        help="Bounding cube of the world")    
+    parser.add_argument("--inner-bcube", dest="inner_bcube", type=float, nargs=6,                         
+                        metavar=("LON-MIN", "LAT-MIN", "HEIGHT-MIN", 
+                                 "LON-MAX", "LAT-MAX", "HEIGHT-MAX"), 
+                        help="Only the points in this bounding cube, must be inside the bounding"+ 
+                             " cube of the world will be considered")
+    parser.add_argument("--resolution", dest="resolution", type=int, nargs=3, 
+                        metavar=("LON-RES", "LAT-RES", "HEIGHT-RES"), 
+                        help="Use a 3d grid of the given resolution as output to render the points")
+    
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--point-size", dest="point_size", type=float,                          
+                        metavar=("POINT-SIZE"), 
+                        help="Use an element of the given size as output to render the points (if alone) or the cells (if along with --resolution)")
+    group.add_argument("--meld-boxes", dest="meld_boxes", action="store_true",
+                        help="If creating boxes filling the cells, it will try to minimize"+
+                        " the total number of boxes by melding together contiguous cells into bigger boxes")
+    
+    parser.add_argument("--output-format", dest="output_format", choices=["pov", "threejs"],  
+                        default="pov",                          
+                        help="Output format: POV-RAY or Three.js compatible JavaScript")            
+    parser.add_argument("--tolerance", dest="tolerance", type=int,  
+                        default=1, metavar="TOLERANCE",                         
+                        help="More than TOLERANCE points in a cell to consider it occupied")        
+    parser.add_argument("--min-cluster-size", dest="min_cluster_size", type=int,  
+                        default=1, metavar="MIN-CLUSTER-SIZE",                         
+                        help="More than MIN-CLUSTER-SIZE cells in a cluster to render it")
+    parser.add_argument("--cell-type", dest="cell_type", choices=["box", "sphere", 
+                                                                  "cylinder", "cyl-blob"],
+                        default="box",                                                          
+                        help="Choose the type of primitive for the output")
+    parser.add_argument("--verbose", action="store_true",
+                       help="Writes some statistics to the output")
+
+    
+    args = parser.parse_args()
+    
+    # Reproject bcube to POV hack map
+    minbcube = coords_to_hack_map_proj(args.bcube[:3], args.origin_lon, 
+                                       args.origin_lat, args.bcube[2])
+    maxbcube = coords_to_hack_map_proj(args.bcube[3:], args.origin_lon, 
+                                       args.origin_lat, args.bcube[2])    
+    assert(maxbcube[0] >= minbcube[0] and
+           maxbcube[1] >= minbcube[1] and
+           maxbcube[2] >= minbcube[2])
+    
+    # If we are creating a grid with the points (i.e. creating an
+    # object per cell in this grid, that may contain many points)
+    if args.resolution:
+        if args.inner_bcube:
+            coord_filter = lambda coords: coords_in_bcube(coords, args.inner_bcube)
+        else:
+            coord_filter = lambda coords: True
+        matrix = SparseMatrix.create_from_coords(simple_text_file_generator(args.input_file,
+                                         coord_filter,
+                                         coord_transformer = lambda coords : coords_to_hack_map_proj(coords, 
+                                                           args.origin_lon, 
+                                                           args.origin_lat,
+                                                           args.bcube[2])),
+                                       args.resolution, {'min': minbcube, 
+                                                         'max': maxbcube})   
+    
+        if args.verbose:
+            num_of_cells = 0
+            num_of_points = 0
+            num_of_cells_with_points = {}
+            for cell in matrix.values:
+                current_cell_num_points = matrix.values[cell] 
+                num_of_cells += 1
+                num_of_points += current_cell_num_points 
+                if current_cell_num_points in num_of_cells_with_points: 
+                    num_of_cells_with_points[current_cell_num_points] += 1
+                else:
+                    num_of_cells_with_points[current_cell_num_points] = 1
+                    
+            print("Number of points:", num_of_points)
+            print("Number of occupied cells:", num_of_cells)
+            print("Average number of points per cell:", num_of_points/num_of_cells)                        
+        
+        clusters, cluster_list = cluster_matrix_from_cell_matrix(matrix)
+        
+        if args.verbose:
+            print("Number of clusters of contiguous cells:", len(cluster_list))
+            big_enough_clusters = 0
+            for cluster in cluster_list:
+                ncells_in_cluster = len(cluster) 
+                if ncells_in_cluster > args.min_cluster_size:
+                    big_enough_clusters += 1
+            print("Number of clusters with more than min-cluster-size cells:", 
+              big_enough_clusters)
+        
+        if args.output_format == "pov":        
+            cells_to_POV(cluster_list, matrix, args.output_file, args.tolerance, 
+                         args.min_cluster_size, args.cell_type, args.point_size,
+                         args.meld_boxes)
+        elif args.output_format == "threejs":
+            cells_to_Threejs(cluster_list, matrix, args.output_file, args.tolerance, 
+                             args.min_cluster_size, args.cell_type, args.point_size, 
+                             args.meld_boxes)
+    else: # We are producing an object per each point
+        if args.output_format == "pov":
+            points_to_POV(simple_text_file_generator(args.input_file,
+                        lambda coords : coords_to_hack_map_proj(coords, 
+                                          args.origin_lon, 
+                                          args.origin_lat,
+                                          args.bcube[2])),
+                          args.output_file, args.point_size, args.cell_type)
+        else:
+            print("Options are not compatible with", args.output_format,"output format.")
+    if args.verbose:
+        print("Processing time: {:.2f} seconds.".format(time.time()-init_time))
+
+    
+#################################################################
+#################################################################
+#################################################################
+# Unit Tests
+
+
+# Allow use both as module and script
+if __name__ == "__main__": # script
+    main()
+else:    
+    pass
+    # Module specific initialization
                   
     
 

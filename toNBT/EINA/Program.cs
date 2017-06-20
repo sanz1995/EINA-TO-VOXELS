@@ -9,6 +9,7 @@ namespace EINA
 {
     class Program
     {
+        static int num = 0;
         static void Main (string[] args)
         {
 
@@ -23,24 +24,17 @@ namespace EINA
             NbtWorld world = AnvilWorld.Create(dest);
 
             world.Level.LevelName = "EINA";
-            world.Level.Spawn = new SpawnPoint(20, 90, 20);
+            world.Level.Spawn = new SpawnPoint(292, 70, 270);
             world.Level.GameType = GameType.CREATIVE;
             world.Level.Initialized = true;
 
 
             Player p = new Player();
 
-            p.Position.X = 0;
-            p.Position.Y = 76;
-            p.Position.Z = 0;
+            p.Position.X = 292;
+            p.Position.Y = 130;
+            p.Position.Z = 292;
 
-
-            p.Spawn = new SpawnPoint(20, 90, 20);
-            
-            world.Level.Player = p;
-
-            world.Level.Player.Spawn = new SpawnPoint(20, 90, 20);
-            world.Level.Player.GameType = PlayerGameType.Creative;
             
 
             IPlayerManager pm = world.GetPlayerManager();
@@ -81,27 +75,42 @@ namespace EINA
 
                     chunk.IsTerrainPopulated = true;
                     chunk.Blocks.AutoLight = false;
-                    FlatChunk(chunk, 64);
+                    //FlatChunk(chunk, 64);
                     chunk.Blocks.RebuildHeightMap();
                     chunk.Blocks.RebuildBlockLight();
                     chunk.Blocks.RebuildSkyLight();
                     //System.Console.WriteLine(chunk.IsDirty);
-                    chunk.Blocks.SetBlock(x%16, z + 64, y%16, new AlphaBlock((int)BlockType.WOOL,color));
+                    setBlock(chunk,x%16, z + 64, y%16,color);
                 }else{
                     //chunk = cm.GetChunkRef(xLocal,yLocal);
                     //System.Console.WriteLine(x%16+"  "+y%16+"  "+(z+64));
-                    chunk.Blocks.SetBlock(x%16, z + 64, y%16, new AlphaBlock((int)BlockType.WOOL,color));
+                    setBlock(chunk,x%16, z + 64, y%16,color);
 
                 }
             }
             chunk = cm.GetChunkRef(0,0);
 
             for (int x = 0; x < 16; x++) {
-                chunk.Blocks.SetBlock(x%16, 100, 0, new AlphaBlock((int)BlockType.WOOL,x));
+                for (int z = 0; z < 16; z++) {
+                    setBlock(chunk,x, 100, z, 16);
+                }
             }
 
             world.Save();
 
+
+        }
+
+
+
+        static void setBlock(ChunkRef chunk, int x, int y, int z, int color){
+            if(color<16){
+                chunk.Blocks.SetBlock(x, y, z, new AlphaBlock((int)BlockType.WOOL,color));
+            }else if(color == 16){
+                chunk.Blocks.SetBlock(x, y, z, new AlphaBlock((int)BlockType.GRASS));
+            }else if(color == 17){
+                chunk.Blocks.SetBlock(x, y, z, new AlphaBlock((int)BlockType.SAPLING,9));
+            }
 
         }
 
