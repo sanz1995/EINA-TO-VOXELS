@@ -64,22 +64,12 @@ if __name__ == '__main__':
     print("Creando matriz")
 
     matrix = pointcloud_proc.SparseMatrix.create_from_coords(coords, resolution, bcube)
-
-
-    print ("creando edificio")
-    dirtyMatrix = [[True for j in range(resolution[0])] for k in range(resolution[1])]
     
-    addBuilding('../resources/adaByron.binvox',matrix,162,249,5,dirtyMatrix,226,263)
-    
-    print "creado"
     
     list = osm.intersectWithMatrix(matrix)
     
     green = list[0]
     roads = list[1]
-    
-    print green
-    print roads
     
     
     matrix=heuristic.setRoads(matrix,roads)
@@ -102,7 +92,9 @@ if __name__ == '__main__':
     
     
 
+    dirtyMatrix = [[True for j in range(resolution[0])] for k in range(resolution[1])]
     
+    addBuilding('../resources/adaByron.binvox',matrix,162,249,5,dirtyMatrix,226,263)
     
     matrix = heuristic.createWalls(matrix,dirtyMatrix,green)
     
