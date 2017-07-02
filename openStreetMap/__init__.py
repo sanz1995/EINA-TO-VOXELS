@@ -1,1 +1,0 @@
-from openStreetMap import OpenStreetMap

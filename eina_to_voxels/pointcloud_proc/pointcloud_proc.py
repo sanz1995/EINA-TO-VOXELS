@@ -798,15 +798,6 @@ def simple_text_file_generator(filepath, coord_filter = lambda coords: True,
                 yield coord_transformer(coords)        
 
 
-def writeMatrix(name, matrix):
-    f = open(name, 'w')
-    cells = matrix.values.keys()
-    for cell in cells:
-        f.write("%d %d %d %d\n" % (matrix.resolution[0]-cell[0],cell[1],cell[2],matrix.values[cell][1]))
-
-    f.close()
-
-
 
 
 def main():

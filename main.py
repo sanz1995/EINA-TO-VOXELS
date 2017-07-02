@@ -1,10 +1,34 @@
+import sys
+import eina_to_voxels
 
+if __name__ == '__main__':
+    map = eina_to_voxels.Map()
+    
+    map.read(sys.argv[1])
+    map.useOpenStreetMap()
+    map.useHeuristic()
+    
+    map.addBuilding(sys.argv[3],162,249,5)
+    
+    map.addSign(226,263)
+    
+    
+    
+    matrix = map.createWalls()
+    
+    
+    map.writeMatrix(sys.argv[2])
+    
+
+    #inFile = File(sys.argv[1], mode = "r")
+
+"""
+import sys
 import numpy as np
 from laspy.file import File
 import pointcloud_proc
 import heuristic
 import openStreetMap
-import sys
 
 if __name__ == '__main__':
 
@@ -82,4 +106,4 @@ if __name__ == '__main__':
     
     print("Finalizado")
     
-
+"""

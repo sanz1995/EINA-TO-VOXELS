@@ -359,24 +359,3 @@ def changeBrightness(red,green,blue, n):
     blue = [ int(h[2]*255) for h in rgb]
     
     return (red, green, blue)
-
-
-def addBuilding(name,matrix, x, y, z, dirtyMatrix, xSign, ySign):
-    
-    with open(name, 'rb') as f:
-        model = binvox_rw.read_as_3d_array(f)
-    for i in range (0,model.dims[0]):
-        for j in range (0,model.dims[1]):
-            for k in range (0,model.dims[2]):
-                dirtyMatrix[i+x][k+y] = False
-                if model.data[i][k][j]:
-                    matrix.values[(i+x,k+y,j+z)]= (1,8)
-                    
-    
-    n = 0
-    while (x,y,z+n) in matrix.values:
-        n+=1
-                    
-    matrix.values[(xSign,ySign,z+n)]= (1,19)
-
-
