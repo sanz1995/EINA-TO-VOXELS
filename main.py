@@ -3,43 +3,14 @@ import numpy as np
 from laspy.file import File
 import pointcloud_proc
 import heuristic
-import binvox_rw
 import openStreetMap
 import sys
-
-def writeMatrix(name, matrix):
-    f = open(name, 'w')
-    cells = matrix.values.keys()
-    for cell in cells:
-        f.write("%d %d %d %d\n" % (matrix.resolution[0]-cell[0],cell[1],cell[2],matrix.values[cell][1]))
-
-    f.close()
-
-def addBuilding(name,matrix, x, y, z, dirtyMatrix, xSign, ySign):
-    
-    with open(name, 'rb') as f:
-        model = binvox_rw.read_as_3d_array(f)
-    for i in range (0,model.dims[0]):
-        for j in range (0,model.dims[1]):
-            for k in range (0,model.dims[2]):
-                dirtyMatrix[i+x][k+y] = False
-                if model.data[i][k][j]:
-                    matrix.values[(i+x,k+y,j+z)]= (1,8)
-                    
-    
-    n = 0
-    while (x,y,z+n) in matrix.values:
-        n+=1
-                    
-    matrix.values[(xSign,ySign,z+n)]= (1,19)
-
 
 if __name__ == '__main__':
 
 
     inFile = File(sys.argv[1], mode = "r")
-
-    osm = openStreetMap.OpenStreetMap(sys.argv[2])
+    
     
     # Colores sin modificar
     rgb = (inFile.Red/255, inFile.Green/255, inFile.Blue/255)
@@ -55,10 +26,10 @@ if __name__ == '__main__':
     
     
     #Numero de celdas para x, y, z
-    resolution = (500, 500, 90)
-    
+    resolution = (int(round(max(inFile.x) - min(inFile.x))), int(round(max(inFile.y) - min(inFile.y))), int(round(max(inFile.z) - min(inFile.z))))
+
     #Esquinas max y min de la estructura
-    bcube = {'min': (675500.0, 4616500.0, 192.37),'max': (676000.0, 4617000.0, 282.74)}
+    bcube = {'min': (min(inFile.x), min(inFile.y), min(inFile.z)),'max': (max(inFile.x), max(inFile.y), max(inFile.z))}
     
     
     print("Creando matriz")
@@ -66,11 +37,18 @@ if __name__ == '__main__':
     matrix = pointcloud_proc.SparseMatrix.create_from_coords(coords, resolution, bcube)
     
     
+    
+    osm = openStreetMap.OpenStreetMap()
+    
+    if len(sys.argv) > 4:
+        osm.readMap(sys.argv[4])
+    else:
+        osm.downloadMap(min(inFile.x),min(inFile.y),max(inFile.x),max(inFile.y))
+        
     list = osm.intersectWithMatrix(matrix)
     
     green = list[0]
     roads = list[1]
-    
     
     matrix=heuristic.setRoads(matrix,roads)
     matrix=heuristic.setGreenZone(matrix,green)
@@ -94,12 +72,13 @@ if __name__ == '__main__':
 
     dirtyMatrix = [[True for j in range(resolution[0])] for k in range(resolution[1])]
     
-    addBuilding('../resources/adaByron.binvox',matrix,162,249,5,dirtyMatrix,226,263)
+    if len(sys.argv) > 3:
+        heuristic.addBuilding(sys.argv[3],matrix,162,249,5,dirtyMatrix,226,263)
     
     matrix = heuristic.createWalls(matrix,dirtyMatrix,green)
     
     
-    writeMatrix(sys.argv[3], matrix)
+    pointcloud_proc.writeMatrix(sys.argv[2], matrix)
     
     print("Finalizado")
     

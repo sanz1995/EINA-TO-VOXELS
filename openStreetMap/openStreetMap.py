@@ -1,12 +1,13 @@
 from osgeo import ogr
 import utm
 import osmapi
-import sys
 import pointcloud_proc
 
 class OpenStreetMap:
     
-    def __init__(self, name):
+    
+    
+    def readMap(self, name):
         
         api = osmapi.OsmApi()
         file = open(name, "r")
@@ -23,6 +24,27 @@ class OpenStreetMap:
             self.dict[item.get("data").get("id")] = item.get("data")
             
         file.close()
+        
+    def downloadMap(self, minX, minY, maxX, maxY):
+        api = osmapi.OsmApi()
+        #file = open(name, "r")
+        
+        minUTM = utm.to_latlon(minX, minY, 30, 'U')
+        
+        maxUTM = utm.to_latlon(maxX, maxY, 30, 'U')
+        
+        self.area = api.Map(minUTM[1], minUTM[0], maxUTM[1], maxUTM[0])
+        
+        self.dict = {}
+        
+        self.green = ogr.Geometry(ogr.wkbMultiPolygon)
+        self.roads = ogr.Geometry(ogr.wkbMultiLineString)
+    
+    
+        for item in self.area:
+            self.dict[item.get("data").get("id")] = item.get("data")
+            
+        #file.close()
         
 
     """
