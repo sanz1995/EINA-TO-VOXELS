@@ -12,6 +12,10 @@ class Map:
         
         self.osm = openStreetMap.OpenStreetMap()
         
+        self.green = []
+        
+        self.roads = []
+        
         
     
     def read(self, src):
@@ -79,6 +83,9 @@ class Map:
         
         
     def useHeuristic(self):
+        
+        self.matrix=heuristic.deleteIsolated(self.matrix)
+        
         self.matrix=heuristic.expandBlocks(self.matrix)
     
         for i in range (0, 5):
