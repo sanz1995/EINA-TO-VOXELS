@@ -101,8 +101,8 @@ class Map:
             
     
     
-    def addBuilding(self,name, x, y, z):
-        with open(name, 'rb') as f:
+    def addBuilding(self,src, x, y, z):
+        with open(src, 'rb') as f:
             model = binvox_rw.read_as_3d_array(f)
         for i in range (0,model.dims[0]):
             for j in range (0,model.dims[1]):
@@ -127,8 +127,8 @@ class Map:
         
         
     
-    def writeMatrix(self,name):
-        f = open(name, 'w')
+    def writeMatrix(self,dest):
+        f = open(dest, 'w')
         cells = self.matrix.values.keys()
         for cell in cells:
             f.write("%d %d %d %d\n" % (self.matrix.resolution[0]-cell[0],cell[1],cell[2],self.matrix.values[cell][1]))

@@ -6,10 +6,10 @@ import pointcloud_proc
 class OpenStreetMap:
     
     
-    def readMap(self, name):
+    def readMap(self, src):
         
         api = osmapi.OsmApi()
-        file = open(name, "r")
+        file = open(src, "r")
         
         self.area = api.ParseOsm(file.read())
         
