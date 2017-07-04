@@ -94,26 +94,29 @@ class OpenStreetMap:
     """
     
     def intersectWithMatrix(self,matrix):
-        greenBlocks = []
-        roadBlocks = []
+        
         
         self.getGreenZone()
         self.getRoads()
         
         resolution = matrix.resolution
+        
+        
+        greenBlocks = [[False for j in range(resolution[0])] for k in range(resolution[1])]
+        roadBlocks = [[False for j in range(resolution[0])] for k in range(resolution[1])]
+        
+        
         for i in range (0,resolution[0]):
             for j in range(0,resolution[1]):
                 point = ogr.Geometry(ogr.wkbPoint)
                 
                 coord = pointcloud_proc.cell_to_coords((i,j,0),resolution,matrix.bcube)
                 point.AddPoint(coord[0],coord[1])
-                if point.Intersects(self.green):
-                    greenBlocks.append((i,j))
+                if point.Distance(self.green) == 0:
+                    greenBlocks[i][j] = True
                     
-                if point.Intersects(self.green):
-                    greenBlocks.append((i,j))
                 if point.Distance(self.roads) < 3:
-                    roadBlocks.append((i,j))
+                    roadBlocks[i][j] = True
         return (greenBlocks, roadBlocks)
 
 

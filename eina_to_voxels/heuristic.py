@@ -241,7 +241,7 @@ def createWalls(matrix, dirtyMatrix, green):
         for j in range(0,resolution[1]):
             populated = False
             h = 0
-            if dirtyMatrix[i][j]:
+            if dirtyMatrix[i][j] & (green[i][j] == False):
                 for k in range(resolution[2],0,-1):
                     if populated:
                         
@@ -269,33 +269,35 @@ def createWalls(matrix, dirtyMatrix, green):
 def deleteTrees(matrix,green):
     num = 0
     resolution = matrix.resolution
-    for (i,j) in green:
-        for k in range(0,resolution[2]):
-            #print((i,j,k))
-            if (i,j,k) in matrix.values:
-                if (matrix.values[(i,j,k)][1] == 16) & (k > 8):
-                    ground = False
-                    h=1
-                    while (ground==False) & (h!=k):
-                        h+=1
-                        neighbor = 0
-                        for p in [-1, 1]:
-                            if(i+p,j,k-h) in matrix.values:
-                                neighbor+=1
-                            if(i,j+p,k-h) in matrix.values:
-                                neighbor+=1
-                            if(i+p,j+p,k-h) in matrix.values:
-                                neighbor+=1
-                            if(i-p,j-p,k-h) in matrix.values:
-                                neighbor+=1
-                                
-                        if ((neighbor > 2) & ((k-h)<9)):
-                            ground = True
-                            num+=1
-                            if(num%30==0):
-                                createTree(matrix,i,j,k-h)
-                            matrix.values[(i,j,k-h)] = (1,16)
-                            del matrix.values[(i,j,k)]
+    for i in range(0,resolution[0]):
+        for j in range(0,resolution[1]):
+            if green[i][j]:
+                for k in range(0,resolution[2]):
+                    #print((i,j,k))
+                    if (i,j,k) in matrix.values:
+                        if (matrix.values[(i,j,k)][1] == 16) & (k > 8):
+                            ground = False
+                            h=1
+                            while (ground==False) & (h!=k):
+                                h+=1
+                                neighbor = 0
+                                for p in [-1, 1]:
+                                    if(i+p,j,k-h) in matrix.values:
+                                        neighbor+=1
+                                    if(i,j+p,k-h) in matrix.values:
+                                        neighbor+=1
+                                    if(i+p,j+p,k-h) in matrix.values:
+                                        neighbor+=1
+                                    if(i-p,j-p,k-h) in matrix.values:
+                                        neighbor+=1
+                                        
+                                if ((neighbor > 2) & ((k-h)<9)):
+                                    ground = True
+                                    num+=1
+                                    if(num%30==0):
+                                        createTree(matrix,i,j,k-h)
+                                    matrix.values[(i,j,k-h)] = (1,16)
+                                    del matrix.values[(i,j,k)]
                                 
                         
     return matrix
@@ -331,19 +333,23 @@ def createTree(matrix,x,y,z):
 
 
 def setGreenZone(matrix,green):
-    for (i,j) in green:
-        for k in range(matrix.resolution[2]):
-            if (i,j,k) in matrix.values:
-                matrix.values[(i,j,k)] = (1,16)
+    for i in range(matrix.resolution[0]):
+        for j in range(matrix.resolution[1]):
+            if green[i][j]:
+                for k in range(matrix.resolution[2]):
+                    if (i,j,k) in matrix.values:
+                        matrix.values[(i,j,k)] = (1,16)
     return matrix   
             
 
 
 def setRoads(matrix,roads):
-    for (i,j) in roads:
-        for k in range(matrix.resolution[2]):
-            if (i,j,k) in matrix.values:
-                matrix.values[(i,j,k)] = (1,7)
+    for i in range(matrix.resolution[0]):
+        for j in range(matrix.resolution[1]):
+            if roads[i][j]:
+                for k in range(matrix.resolution[2]):
+                    if (i,j,k) in matrix.values:
+                        matrix.values[(i,j,k)] = (1,7)
     return matrix 
 
 

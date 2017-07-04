@@ -12,10 +12,6 @@ class Map:
         
         self.osm = openStreetMap.OpenStreetMap()
         
-        self.green = []
-        
-        self.roads = []
-        
         
     
     def read(self, src):
@@ -56,6 +52,11 @@ class Map:
         
         
         self.dirtyMatrix = [[True for j in range(resolution[0])] for k in range(resolution[1])]
+        
+        self.green = [[False for j in range(resolution[0])] for k in range(resolution[1])]
+        
+        self.roads = [[False for j in range(resolution[0])] for k in range(resolution[1])]
+    
     
     def useOpenStreetMap(self):
         self.osm.downloadMap(self.xMin,self.yMin,self.xMax,self.yMax)
