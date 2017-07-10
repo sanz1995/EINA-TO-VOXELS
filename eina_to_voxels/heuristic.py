@@ -138,8 +138,8 @@ def deleteIsolatedGroups(matrix,buildings):
     
     resolution = matrix.resolution
     
-    x, y, z = resolution;
-    cluster = [[[[] for i in range(z)] for j in range(y/n + (y%n > 0))] for k in range(x/n + (x%n > 0))]
+    x, y, z = resolution
+    cluster = [[[[] for i in range(z + 1)] for j in range(y/n + (y%n > 0))] for k in range(x/n + (x%n > 0))]
     
     cells = matrix.values.keys()
     for (i,j,k) in cells:

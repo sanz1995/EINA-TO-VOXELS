@@ -8,47 +8,45 @@ import unittest
 class TestEina_to_voxels(unittest.TestCase):
     
     def setUp(self):
-        self.map = eina_to_voxels.Map()
-        
+        self.world = eina_to_voxels.World()
         
     def testBasic(self):
-        self.map.read("resources/EINA.las")
-        self.map.writeMatrix("resources/out.txt")
+        self.world.read("resources/EINA.las")
+        self.world.exportWorld("resources/out.txt")
     
     def testHeuristicWithoutOpenStreetMap(self):
-        self.map.read("resources/EINA.las")
-        self.map.useHeuristic()
-        self.map.writeMatrix("resources/out.txt")
+        self.world.read("resources/EINA.las")
+        self.world.useHeuristic()
+        self.world.exportWorld("resources/out.txt")
     
         
         
-    def testOpenStreetMap(self):
-        self.map.read("resources/EINA.las")
-        self.map.useOpenStreetMap()
-        self.map.writeMatrix("resources/out.txt")
+    def testOpenStreetworld(self):
+        self.world.read("resources/EINA.las")
+        self.world.useOpenStreetMap()
+        self.world.exportWorld("resources/out.txt")
         
         
     def testFull(self):
-        self.map.read("resources/EINA.las")
-        self.map.useOpenStreetMap()
-        self.map.useHeuristic()
-        self.map.writeMatrix("resources/out.txt")
+        self.world.read("resources/EINA.las")
+        self.world.useOpenStreetMap()
+        self.world.useHeuristic()
+        self.world.exportWorld("resources/out.txt")
 
     
     def testAddBuilding(self):
-        self.map.read("resources/EINA.las")
-        self.map.addBuilding("resources/adaByron.binvox",62,49,5)
-        self.map.addSign(5,5)
-        self.map.writeMatrix("resources/out.txt")
+        self.world.read("resources/EINA.las")
+        self.world.addBuilding("resources/adaByron.binvox",62,49,5)
+        self.world.addSign(5,5)
+        self.world.exportWorld("resources/out.txt")
         
         
-    
     def testAddBuildingWithHeuristic(self):
-        self.map.read("resources/EINA.las")
-        self.map.addBuilding("resources/adaByron.binvox",62,49,5)
-        self.map.useHeuristic()
-        self.map.createWalls()
-        self.map.writeMatrix("resources/out.txt")
+        self.world.read("resources/EINA.las")
+        self.world.addBuilding("resources/adaByron.binvox",62,49,5)
+        self.world.useHeuristic()
+        self.world.createWalls()
+        self.world.exportWorld("resources/out.txt")
     
 
 

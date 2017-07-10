@@ -38,10 +38,10 @@ class TestOpenStreetMap(unittest.TestCase):
     
     def testIntersectWithMatrix(self):
         
-        map = eina_to_voxels.Map()
-        map.read("resources/EINA.las")
+        world = eina_to_voxels.World()
+        world.read("resources/EINA.las")
         
-        matrix = map.matrix
+        matrix = world.matrix
         
         min = matrix.bcube.get("min")
         max = matrix.bcube.get("max")

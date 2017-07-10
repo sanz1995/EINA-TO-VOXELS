@@ -159,6 +159,14 @@ class World:
                     self.myBuildings[i+x][k+y] = True
                     if model.data[i][k][j]:
                         self.matrix.values[(i+x,k+y,j+z)]= (1,8)
+                        #Update resolution
+                        if (x + i) > self.matrix.resolution[0]:
+                            self.matrix.resolution = ((x + i),self.matrix.resolution[1],self.matrix.resolution[2])
+                        if (k + y) > self.matrix.resolution[1]:
+                            self.matrix.resolution = (self.matrix.resolution[0],(k + y),self.matrix.resolution[2])
+                        if (j + z) > self.matrix.resolution[2]:
+                            self.matrix.resolution = (self.matrix.resolution[0],self.matrix.resolution[1],(j + z))
+                        
                         
         
     
