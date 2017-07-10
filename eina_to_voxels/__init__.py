@@ -1,1 +1,1 @@
-from eina_to_voxels import Map
+from eina_to_voxels import *

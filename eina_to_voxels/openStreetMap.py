@@ -2,10 +2,15 @@ from osgeo import ogr
 import utm
 import osmapi
 import pointcloud_proc
+import matplotlib.pyplot as plt 
+import json
 
 class OpenStreetMap:
     
-    
+    """
+    src is the path of an openStreetMap file. The program reads the map and creates
+     a dictionaty with its values  
+    """
     def readMap(self, src):
         
         api = osmapi.OsmApi()
@@ -23,7 +28,12 @@ class OpenStreetMap:
             self.dict[item.get("data").get("id")] = item.get("data")
             
         file.close()
-        
+       
+       
+    """
+    The program downloads an openStreetMap file for the coordinates given and creates
+     a dictionaty with its values  
+    """ 
     def downloadMap(self, minX, minY, maxX, maxY):
         api = osmapi.OsmApi()
         #file = open(name, "r")
@@ -37,13 +47,13 @@ class OpenStreetMap:
         self.dict = {}
         
         self.green = ogr.Geometry(ogr.wkbMultiPolygon)
+        self.buildings = ogr.Geometry(ogr.wkbMultiPolygon)
         self.roads = ogr.Geometry(ogr.wkbMultiLineString)
     
     
         for item in self.area:
             self.dict[item.get("data").get("id")] = item.get("data")
             
-        #file.close()
         
 
     """
@@ -68,7 +78,37 @@ class OpenStreetMap:
                             if way.get("ref") in self.dict:
                                 nodes += self.dict[way.get("ref")].get("nd")
                         addNodesToMultiPol(self.dict, nodes, self.green)
+                        
         return self.green
+    
+    
+    
+    """
+    Returns a Multipolygon containing each area of building
+    """
+    
+    def getBuildings(self):
+        
+        if self.buildings.IsEmpty():
+            for item in self.area:
+                if item.get("type")=="way":
+                    data = item.get("data")
+                    tag = data.get("tag")
+                    if (tag.get("building") != "") & (tag.get("building") != None):
+                        addNodesToMultiPol(self.dict, data.get("nd"), self.buildings)
+                
+                elif item.get("type")=="relation":
+                    data = item.get("data")
+                    tag = data.get("tag")
+                    if (tag.get("building") != "") & (tag.get("building") != None):
+                        nodes = []
+                        for way in data.get("member"):
+                            if way.get("ref") in self.dict:
+                                if self.dict[way.get("ref")].get("nd") != None:
+                                    nodes += self.dict[way.get("ref")].get("nd")
+                        addNodesToMultiPol(self.dict, nodes, self.buildings)
+                        
+        return self.buildings
 
 
 
@@ -88,28 +128,27 @@ class OpenStreetMap:
         return self.roads
     
     """
-    Given an SparseMatrix, it returns a list of pairs (x, y) from the matrix, 
-    where every pair of the list is a green zone. It also returns a list of pairs for roads.
+    Given an SparseMatrix, another matrix with True value for every coordinate located in a green zone, 
+    It also returns a matrix for roads and buildings.
     
     """
     
     def intersectWithMatrix(self,matrix):
-        
-        
         self.getGreenZone()
+        self.getBuildings()
         self.getRoads()
         
         resolution = matrix.resolution
         
         
-        greenBlocks = [[False for j in range(resolution[0])] for k in range(resolution[1])]
-        roadBlocks = [[False for j in range(resolution[0])] for k in range(resolution[1])]
+        greenBlocks = [[False for j in range(resolution[0]+1)] for k in range(resolution[1]+1)]
+        roadBlocks = [[False for j in range(resolution[0]+1)] for k in range(resolution[1]+1)]
+        buildingBlocks = [[False for j in range(resolution[0]+1)] for k in range(resolution[1]+1)]
         
         
         for i in range (0,resolution[0]):
             for j in range(0,resolution[1]):
                 point = ogr.Geometry(ogr.wkbPoint)
-                
                 coord = pointcloud_proc.cell_to_coords((i,j,0),resolution,matrix.bcube)
                 point.AddPoint(coord[0],coord[1])
                 if point.Distance(self.green) == 0:
@@ -117,8 +156,10 @@ class OpenStreetMap:
                     
                 if point.Distance(self.roads) < 3:
                     roadBlocks[i][j] = True
-        return (greenBlocks, roadBlocks)
-
+                    
+                if point.Distance(self.buildings) < 6:
+                    buildingBlocks[i][j] = True
+        return (greenBlocks, roadBlocks, buildingBlocks)
 
 
 def addNodesToMultiPol(dict, nodes, multiPol):
@@ -135,6 +176,7 @@ def addNodesToMultiPol(dict, nodes, multiPol):
     poly = ogr.Geometry(ogr.wkbPolygon)
     poly.AddGeometry(ring)
     
+    
     if poly.IsValid():
         multiPol.AddGeometry(poly)
         
@@ -148,5 +190,17 @@ def addNodesToLine(dict, nodes, multiLine):
         line.AddPoint(utmCoords[0],utmCoords[1])
         
     multiLine.AddGeometry(line)
+    
+    
+def plot(geometry):
+    
+    ax = plt.figure().gca()
+    coords = json.loads(geometry.ExportToJson())['coordinates']
+    
+    x = [i for i,j,k in coords[0]]
+    y = [j for i,j,k in coords[0]]
+    ax.plot(x,y)
+    ax.axis('scaled')
+    plt.show()
     
     
