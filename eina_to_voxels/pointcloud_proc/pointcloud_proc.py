@@ -213,7 +213,6 @@ def coords_to_cell(coords, resolution, bcube):
     minx, miny, minz = bcube['min']
     maxx, maxy, maxz = bcube['max']
     #print(x)
-    #print(minx)
     #print("----------")
     assert(x >= minx and x <= maxx)
     assert(y >= miny and y <= maxy)

@@ -9,7 +9,7 @@ The program alse creates some trees if for blocks created in a green zone
 
 """
 def join(matrix, z,green):
-    new_matrix = pointcloud_proc.SparseMatrix(matrix.values, matrix.resolution, matrix.bcube)
+    new_matrix = pointcloud_proc.SparseMatrix(copy.copy(matrix.values), matrix.resolution, matrix.bcube)
     neighbor = 0
     neighbor_colors = [0]*20
     num = 0
@@ -31,18 +31,22 @@ def join(matrix, z,green):
                             neighbor_colors[matrix.values[(i+p,j+p,k)][1]]+=1
                             neighbor+=1
                             
-                        if(i-p,j-p,k) in matrix.values:
-                            neighbor_colors[matrix.values[(i-p,j-p,k)][1]]+=1
+                        if(i+p,j-p,k) in matrix.values:
+                            neighbor_colors[matrix.values[(i+p,j-p,k)][1]]+=1
                             neighbor+=1
-                                 
+                            
                     if (neighbor > 3):
-                        new_matrix.values[(i,j,k)] = (1,neighbor_colors.index(max(neighbor_colors)))
-                        if (neighbor_colors.index(max(neighbor_colors)) == 16) & green[i][j]:
+                        #print neighbor
+                        #print neighbor_colors
+                        color = neighbor_colors.index(max(neighbor_colors))
+                        
+                        new_matrix.values[(i,j,k)] = (1,color)
+                        if (color == 16) & (green[i][j]):
                             num+=1
                             if num%30 == 0:
                                 createTree(new_matrix,i,j,k)
                     neighbor_colors = [0]*20
-                    neighbor = 0  
+                    neighbor = 0
     return new_matrix
 
 
@@ -64,14 +68,17 @@ def mergeColors(matrix):
                 if (i,j,k) in matrix.values:
                     
                     #new_matrix.values[(i,j,k)] = (1,matrix.values[(i,j,k)][1])
-                    for p in [-1, 1]:
+                    for p in (0, 1):
                         if(i+p,j,k) in matrix.values:
                             neighbor_colors[matrix.values[(i+p,j,k)][1]]+=1
+                        if(i-p,j,k) in matrix.values:
+                            neighbor_colors[matrix.values[(i-p,j,k)][1]]+=1
                         if(i,j+p,k) in matrix.values:
                             neighbor_colors[matrix.values[(i,j+p,k)][1]]+=1
+                        if(i,j-p,k) in matrix.values:
+                            neighbor_colors[matrix.values[(i,j-p,k)][1]]+=1
                         if(i+p,j+p,k) in matrix.values:
                             neighbor_colors[matrix.values[(i+p,j+p,k)][1]]+=1
-                            
                         if(i-p,j-p,k) in matrix.values:
                             neighbor_colors[matrix.values[(i-p,j-p,k)][1]]+=1
                             
@@ -180,7 +187,7 @@ def deleteIsolatedGroups(matrix,buildings):
 """
 If two blocks share the same i and j value, create a column between them.
 """
-def createWalls(matrix, myBuildings, buildings):
+def createWalls(matrix, myBuildings, buildings, green):
     
     h = 0
     
@@ -188,7 +195,7 @@ def createWalls(matrix, myBuildings, buildings):
     for i in range(0,resolution[0]):
         for j in range(0,resolution[1]):
             h = 0
-            if (myBuildings[i][j] == False) & buildings[i][j]:
+            if (myBuildings[i][j] == False) & ((green[i][j] == False) | (buildings[i][j])):
                 for k in range(resolution[2],0,-1):
                     
                     if (i,j,k) in matrix.values:
@@ -217,19 +224,33 @@ def createWalls(matrix, myBuildings, buildings):
 Create a tree in the coordinates given
 """
 def createTree(matrix,x,y,z):
-    matrix.values[(x,y,z+1)] = (1,17)
-    matrix.values[(x,y,z+2)] = (1,17)
-    matrix.values[(x,y,z+3)] = (1,17)
-    matrix.values[(x,y,z+4)] = (1,17)
-    for i in range(5,10):
-        matrix.values[(x,y,z+i)] = (1,17)
-        matrix.values[(x+1,y,z+i)] = (1,18)
-        matrix.values[(x-1,y,z+i)] = (1,18)
-        matrix.values[(x,y+1,z+i)] = (1,18)
-        matrix.values[(x,y-1,z+i)] = (1,18)
-        matrix.values[(x+1,y+1,z+i)] = (1,18)
-        matrix.values[(x-1,y-1,z+i)] = (1,18)
-    matrix.values[(x,y,z+10)] = (1,18)
+    space = True
+    
+    for i in range(1,matrix.resolution[2]):
+        for j in range(1,5):
+            if ((x,y,z+i) in matrix.values) | \
+                ((x+j,y,z+i) in matrix.values) | \
+                ((x-j,y,z+i) in matrix.values) | \
+                ((x,y+j,z+i) in matrix.values) | \
+                ((x,y-j,z+i) in matrix.values) | \
+                ((x+j,y+j,z+i) in matrix.values) | \
+                ((x-j,y-j,z+i) in matrix.values):
+                space = False
+                
+    if space:
+        matrix.values[(x,y,z+1)] = (1,17)
+        matrix.values[(x,y,z+2)] = (1,17)
+        matrix.values[(x,y,z+3)] = (1,17)
+        matrix.values[(x,y,z+4)] = (1,17)
+        for i in range(5,10):
+            matrix.values[(x,y,z+i)] = (1,17)
+            matrix.values[(x+1,y,z+i)] = (1,18)
+            matrix.values[(x-1,y,z+i)] = (1,18)
+            matrix.values[(x,y+1,z+i)] = (1,18)
+            matrix.values[(x,y-1,z+i)] = (1,18)
+            matrix.values[(x+1,y+1,z+i)] = (1,18)
+            matrix.values[(x-1,y-1,z+i)] = (1,18)
+        matrix.values[(x,y,z+10)] = (1,18)
 
 
 
