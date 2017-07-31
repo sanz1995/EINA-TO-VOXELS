@@ -3,6 +3,7 @@ from laspy.file import File
 import pointcloud_proc
 import openStreetMap
 import colorsys
+import worldDTO
 
 
 class World:
@@ -67,8 +68,15 @@ class World:
         
         
     def start(self):
+        w = worldDTO.WorldDTO(self.matrix, self.roads, self.green, self.buildings, self.myBuildings, self.openStreetMap)
         for h in self.heuristics:
-            self = h.apply(self) 
+            w = h.apply(w) 
+        self.matrix = w.matrix
+        self.roads = w.roads
+        self.green = w.green
+        self.buildings = w.buildings
+        self.myBuildings = w.myBuildings
+        self.openStreetMap = w.openStreetMap
             
     """
     dest is the path of the file where the program exports the world 
