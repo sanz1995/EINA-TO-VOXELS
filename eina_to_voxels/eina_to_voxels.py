@@ -1,28 +1,17 @@
 import numpy as np
 from laspy.file import File
 import pointcloud_proc
-import heuristic
 import openStreetMap
-import binvox_rw
 import colorsys
-import time
-import Image
+
 
 class World:
     
-    
-    
-    def __init__(self):
+    def __init__(self, src):
         
         self.osm = openStreetMap.OpenStreetMap()
+        self.heuristics = []
         
-        
-    """
-    src is the path of a .las file. 
-    The program reads the file and converts it to a sparse matrix. It also changes
-    the colors given to avoid shadows and soften colors
-    """
-    def read(self, src):
         
         inFile = File(src, mode = "r")
         
@@ -35,17 +24,15 @@ class World:
         self.zMax = max(inFile.z)
         
         if ((self.xMax - self.xMin) <= 500):
-            
             
             # Colores sin modificar
             #rgb = (inFile.Red/255, inFile.Green/255, inFile.Blue/255)
             
             # Modificar el brillo de los colores
-            
             rgb = changeBrightness(inFile.Red,inFile.Green,inFile.Blue)
             
             #Se guardan las coordenadas en la variable coord como una unica lista de coordenadas (x, y, z)
-            coords = np.vstack((inFile.x, inFile.y, inFile.z, rgb[0], rgb[1], rgb[2])).transpose()
+            coords = np.vstack((inFile.x, inFile.y, inFile.z, rgb[0],rgb[1],rgb[2])).transpose()
             
             
             #Numero de celdas para x, y, z
@@ -58,9 +45,6 @@ class World:
             print("Creando matriz")
         
             self.matrix = pointcloud_proc.SparseMatrix.create_from_coords(coords, resolution, bcube)
-            
-            for i in range(0,3):
-                self.matrix=heuristic.mergeColors(self.matrix)
             
             self.myBuildings = [[False for j in range(resolution[0]+1)] for k in range(resolution[1]+1)]
             
@@ -75,235 +59,17 @@ class World:
         else:
             print "El fichero es demasiado grande, puedes partirlo con la funcion splitFile()"
             
+        
+        
+        
+    def add(self, heuristic):
+        self.heuristics.append(heuristic)   
+        
+        
+    def start(self):
+        for h in self.heuristics:
+            self = h.apply(self) 
             
-    """
-    src is the path of a .las file. 
-    The program reads the file and converts it to a sparse matrix. It also changes
-    the colors given to avoid shadows and soften colors
-    """
-    def readWithImage(self, src, image, x1, y1, x2, y2):
-        
-        inFile = File(src, mode = "r")
-        
-        self.xMin = min(inFile.x)
-        self.yMin = min(inFile.y)
-        self.zMin = min(inFile.z)
-        
-        self.xMax = max(inFile.x)
-        self.yMax = max(inFile.y)
-        self.zMax = max(inFile.z)
-        
-        if ((self.xMax - self.xMin) <= 500):
-            
-            
-            
-            rgb = useImage(np.vstack((inFile.x, inFile.y, inFile.z)).transpose(), image, x1, y1, x2, y2)
-            
-            
-            rgb = changeBrightness(rgb[0] ,rgb[1], rgb[2])
-            
-            #Se guardan las coordenadas en la variable coord como una unica lista de coordenadas (x, y, z)
-            coords = np.vstack((inFile.x, inFile.y, inFile.z, rgb[0], rgb[1], rgb[2])).transpose()
-            
-            
-            #Numero de celdas para x, y, z
-            resolution = (int(round(self.xMax - self.xMin)), int(round(self.yMax - self.yMin)), int(round(self.zMax - self.zMin)))
-        
-            #Esquinas max y min de la estructura
-            bcube = {'min': (self.xMin, self.yMin, self.zMin),'max': (self.xMax, self.yMax, self.zMax)}
-            
-            
-            print("Creando matriz")
-        
-            self.matrix = pointcloud_proc.SparseMatrix.create_from_coords(coords, resolution, bcube)
-            
-            for i in range(0,3):
-                self.matrix=heuristic.mergeColors(self.matrix)
-            
-            self.myBuildings = [[False for j in range(resolution[0]+1)] for k in range(resolution[1]+1)]
-            
-            self.green = [[False for j in range(resolution[0]+1)] for k in range(resolution[1]+1)]
-            
-            self.roads = [[False for j in range(resolution[0]+1)] for k in range(resolution[1]+1)]
-        
-            self.buildings = [[False for j in range(resolution[0]+1)] for k in range(resolution[1]+1)]
-            
-            
-            self.openStreetMap = False
-        else:
-            print "El fichero es demasiado grande, puedes partirlo con la funcion splitFile()"
-        
-        
-    """
-    It downloads an openStreetMap with the previous size, gets information about green zones, 
-    roads and building and changes the world to fit that information.
-    """
-    def useOpenStreetMap(self):
-        self.openStreetMap = True
-        
-        self.osm.downloadMap(self.xMin,self.yMin,self.xMax,self.yMax)
-        
-        #self.osm.getBuildings()
-        
-        list = self.osm.intersectWithMatrix(self.matrix)
-    
-        self.green = list[0]
-        self.roads = list[1]
-        self.buildings = list[2]
-        
-        
-        heuristic.setRoads(self.matrix,self.roads)
-        heuristic.setGreenZone(self.matrix,self.green)
-    
-        
-    
-    """
-    src is the path of an openStreetMap. The program gets information about green zones, 
-    roads and building from the map and changes the world to fit that information.
-    """
-    def useOpenStreetMapFromFile(self, src):
-        
-        self.openStreetMap = True
-        
-        self.osm.readMap(src)
-        
-        list = self.osm.intersectWithMatrix(self.matrix)
-    
-        self.green = list[0]
-        self.roads = list[1]
-        self.buildings = list[2]
-        
-        heuristic.setRoads(self.matrix,self.roads)
-        heuristic.setGreenZone(self.matrix,self.green)
-        
-        
-    
-    def useImage(self, coords, image, x1, y1, x2, y2):
-    
-        img = Image.open(image)
-        
-        
-        pixelX_size = (x2 - x1)/img.size[0]
-        pixelY_size = (y2 - y1)/img.size[1]
-        
-        #print pixelX_size
-        #print pixelY_size
-        rgb_img = img.convert('RGB')
-        #rgb = rgb_im.getpixel((1, 1))
-        red = []
-        green = []
-        blue = []
-        
-        
-        cells = self.matrix.values.keys()
-        for cell in cells:
-            
-            coord = pointcloud_proc.cell_to_coords(cell, self.matrix.resolution, self.matrix.bcube)
-            x = (coord[0]-x1)/pixelX_size
-            y = (coord[1]-y1)/pixelY_size
-            
-        for coord in coords:
-            
-            x = (coord[0]-x1)/pixelX_size
-            y = (coord[1]-y1)/pixelY_size
-            rgb = rgb_img.getpixel((int(x), int(y)))
-        
-            red.append(rgb[0]*255)
-            green.append(rgb[1]*255)
-            blue.append(rgb[2]*255)
-        
-        return (red, green, blue)
-        
-    
-    """
-    The program uses some heuristics to improve general aspect
-    
-    """
-    
-    def useHeuristic(self):
-        
-        self.matrix=heuristic.deleteIsolated(self.matrix)
-
-        for i in range (0,5):
-            self.matrix=heuristic.deleteIsolatedGroups(self.matrix,self.buildings)
-        
-        
-        self.matrix=heuristic.expandBlocks(self.matrix)
-    
-        
-        for i in range (0, 15):
-            self.matrix=heuristic.join(self.matrix,7,self.green)
-            
-        for i in range (0, 4):
-            self.matrix=heuristic.join(self.matrix,self.matrix.resolution[2],self.green)
-    
-    
-    """
-    src is the path of a binvox file. The program reads the structure in the 
-    binvox file and inserts it in the [x,y,z] coordinates of the world 
-    
-    """
-    def addBuilding(self,src, x, y, z):
-        cell = pointcloud_proc.coords_to_cell((x,y,z), self.matrix.resolution, self.matrix.bcube)
-        x = int(cell[0])
-        y = int(cell[1])
-        z = int(cell[2])
-        
-        with open(src, 'rb') as f:
-            model = binvox_rw.read_as_3d_array(f)
-        for i in range (0,model.dims[0]):
-            for j in range (0,model.dims[1]):
-                for k in range (0,model.dims[2]):
-                    self.myBuildings[i+x][k+y] = True
-                    if model.data[i][k][j]:
-                        self.matrix.values[(i+x,k+y,j+z)]= (1,8)
-                        #Update resolution
-                        if (x + i) > self.matrix.resolution[0]:
-                            self.matrix.resolution = ((x + i),self.matrix.resolution[1],self.matrix.resolution[2])
-                        if (k + y) > self.matrix.resolution[1]:
-                            self.matrix.resolution = (self.matrix.resolution[0],(k + y),self.matrix.resolution[2])
-                        if (j + z) > self.matrix.resolution[2]:
-                            self.matrix.resolution = (self.matrix.resolution[0],self.matrix.resolution[1],(j + z))
-                        
-                        
-        
-    
-    """
-    The program inserts a sign in the [x,y] coordinates of the world 
-    """    
-    def addSign(self, x, y, text):
-        
-        cell = pointcloud_proc.coords_to_cell((x,y,self.matrix.bcube.get("min")[2]), self.matrix.resolution, self.matrix.bcube)
-
-        
-        done = False
-        n = 0
-        while (n < self.matrix.resolution[2]) & (done == False):
-            if (cell[0],cell[1],n) not in self.matrix.values:
-                n+=1
-            else:
-                while (n < self.matrix.resolution[2]) & (done == False):
-                    if (cell[0],cell[1],n) in self.matrix.values:
-                        n+=1
-                    else:
-                        self.matrix.values[(cell[0],cell[1],n)]= (1,19, text)
-                        done = True
-        
-        
-    """
-    If openStreetMap was used before, the program use building information to create walls for that area.
-    If openStreetMap was not used before, the program create walls for the whole world. 
-    If some building was inserted before from a binvox file, the program does not create walls in that area. 
-    
-    """
-    def createWalls(self):
-        if self.openStreetMap == False:
-            self.buildings = [[True for j in range(self.matrix.resolution[0]+1)] for k in range(self.matrix.resolution[1]+1)]
-    
-        heuristic.createWalls(self.matrix,self.myBuildings,self.buildings, self.green)
-        
-        
-    
     """
     dest is the path of the file where the program exports the world 
     """
@@ -317,8 +83,8 @@ class World:
                 f.write("%d %d %d %d\n" % (self.matrix.resolution[0]-cell[0],cell[1],cell[2],self.matrix.values[cell][1]))
     
         f.close()
-    
-    
+        
+        
 """
 Change color brightness for a rgb tuple
 """
@@ -360,34 +126,8 @@ def splitFile(src, dest, x1, y1, x2, y2):
     outFile1 = File(dest, mode = "w", header = inFile.header)
     outFile1.points = points_kept
     outFile1.close()
-
-
-    
-def useImage(coords, image, x1, y1, x2, y2):
-    
-    img = Image.open(image)
-    
-    
-    pixelX_size = (x2 - x1)/img.size[0]
-    pixelY_size = (y2 - y1)/img.size[1]
-    
-    #print pixelX_size
-    #print pixelY_size
-    rgb_img = img.convert('RGB')
-    #rgb = rgb_im.getpixel((1, 1))
-    red = []
-    green = []
-    blue = []
-    
-    for coord in coords:
         
-        x = (coord[0]-x1)/pixelX_size
-        y = (coord[1]-y1)/pixelY_size
-        rgb = rgb_img.getpixel((int(x), int(y)))
     
-        red.append(rgb[0]*255)
-        green.append(rgb[1]*255)
-        blue.append(rgb[2]*255)
+            
     
-    return (red, green, blue)
-         
+            
