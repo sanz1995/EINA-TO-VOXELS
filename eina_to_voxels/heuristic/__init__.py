@@ -7,3 +7,5 @@ from mergeColors import *
 from addBuilding import *
 from createWalls import *
 from useOpenStreetMap import *
+from setGreenZone import *
+from setRoads import *

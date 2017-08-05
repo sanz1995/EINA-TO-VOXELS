@@ -41,34 +41,7 @@ class UseOpenStreetMap(heuristic.Heuristic):
         world.roads = list[1]
         world.buildings = list[2]
         
-        
-        setRoads(matrix,world.roads)
-        setGreenZone(matrix,world.green)
-        
            
         return world
     
     
-"""
-Change color to green in every block located in a green zone
-"""
-def setGreenZone(matrix,green):
-    for i in range(matrix.resolution[0]):
-        for j in range(matrix.resolution[1]):
-            if green[i][j]:
-                for k in range(matrix.resolution[2]):
-                    if (i,j,k) in matrix.values:
-                        matrix.values[(i,j,k)] = (1,16)
-            
-
-
-"""
-Change the color to dark gray in every block located in a road
-"""
-def setRoads(matrix,roads):
-    for i in range(matrix.resolution[0]):
-        for j in range(matrix.resolution[1]):
-            if roads[i][j]:
-                for k in range(matrix.resolution[2]):
-                    if (i,j,k) in matrix.values:
-                        matrix.values[(i,j,k)] = (1,7)

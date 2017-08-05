@@ -4,6 +4,7 @@ import pointcloud_proc
 import openStreetMap
 import colorsys
 import worldDTO
+import time
 
 
 class World:
@@ -16,15 +17,15 @@ class World:
         
         inFile = File(src, mode = "r")
         
-        self.xMin = min(inFile.x)
-        self.yMin = min(inFile.y)
-        self.zMin = min(inFile.z)
+        xMin = min(inFile.x)
+        yMin = min(inFile.y)
+        zMin = min(inFile.z)
         
-        self.xMax = max(inFile.x)
-        self.yMax = max(inFile.y)
-        self.zMax = max(inFile.z)
+        xMax = max(inFile.x)
+        yMax = max(inFile.y)
+        zMax = max(inFile.z)
         
-        if ((self.xMax - self.xMin) <= 500):
+        if ((xMax - xMin) <= 1000):
             
             # Colores sin modificar
             #rgb = (inFile.Red/255, inFile.Green/255, inFile.Blue/255)
@@ -37,10 +38,10 @@ class World:
             
             
             #Numero de celdas para x, y, z
-            resolution = (int(round(self.xMax - self.xMin)), int(round(self.yMax - self.yMin)), int(round(self.zMax - self.zMin)))
+            resolution = (int(round(xMax - xMin)), int(round(yMax - yMin)), int(round(zMax - zMin)))
         
             #Esquinas max y min de la estructura
-            bcube = {'min': (self.xMin, self.yMin, self.zMin),'max': (self.xMax, self.yMax, self.zMax)}
+            bcube = {'min': (xMin, yMin, zMin),'max': (xMax, yMax, zMax)}
             
             
             print("Creando matriz")
@@ -69,8 +70,16 @@ class World:
         
     def start(self):
         w = worldDTO.WorldDTO(self.matrix, self.roads, self.green, self.buildings, self.myBuildings, self.openStreetMap)
+        print "|||||||"
+        print self.matrix.resolution[0]
+        print "|||||||"
         for h in self.heuristics:
+            start = time.time()
             w = h.apply(w) 
+            print h
+            print time.time()-start
+            print "-----------"
+            
         self.matrix = w.matrix
         self.roads = w.roads
         self.green = w.green
@@ -99,7 +108,18 @@ Change color brightness for a rgb tuple
 def changeBrightness(red,green,blue):
     rgb = np.vstack((red, green, blue)).transpose()
     hsv = [ colorsys.rgb_to_hsv(h[0]/65025., h[1]/65025., h[2]/65025.) for h in rgb]
-    rgb = [ colorsys.hsv_to_rgb(h[0], h[1], h[2] + (1 ** h[2])/10) for h in hsv]
+    """
+    print hsv[0][2]
+    print hsv[1][2]
+    print hsv[2][2]
+    print "--------"
+    print h[2] + 0.2*(1-h[2])
+    print (0.2 - (0.2*hsv[1][2])**2)
+    print (0.2 - (0.2*hsv[2][2])**2)
+    """
+    #rgb = [ colorsys.hsv_to_rgb(h[0], h[1], 0.5) for h in hsv]
+    rgb = [ colorsys.hsv_to_rgb(h[0], h[1], h[2] + 0.2*((1-h[2])**2)) for h in hsv]
+    #rgb = [ colorsys.hsv_to_rgb(h[0], h[1], h[2] + (1 ** h[2])/10) for h in hsv]
     red = [ int(h[0]*255) for h in rgb]
     green = [ int(h[1]*255) for h in rgb]
     blue = [ int(h[2]*255) for h in rgb]

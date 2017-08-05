@@ -19,7 +19,7 @@ class MergeColors(heuristic.Heuristic):
         matrix = world.matrix
         
         new_matrix = pointcloud_proc.SparseMatrix({}, matrix.resolution, matrix.bcube)
-        neighbor_colors = [0]*20
+        neighbor_colors = [0]*30
         new_score = neighbor_colors
         
         resolution = matrix.resolution

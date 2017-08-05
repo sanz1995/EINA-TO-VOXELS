@@ -3,7 +3,8 @@ import utm
 import osmapi
 import matplotlib.pyplot as plt 
 import json
-
+import time
+import math
 import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -143,12 +144,16 @@ class OpenStreetMap:
         self.getBuildings()
         self.getRoads()
         
+        
+        
+        
         resolution = matrix.resolution
         
         
-        greenBlocks = [[False for j in range(resolution[0]+1)] for k in range(resolution[1]+1)]
-        roadBlocks = [[False for j in range(resolution[0]+1)] for k in range(resolution[1]+1)]
-        buildingBlocks = [[False for j in range(resolution[0]+1)] for k in range(resolution[1]+1)]
+        greenBlocks = [[True for j in range(resolution[0]+1)] for k in range(resolution[1]+1)]
+        roadBlocks = [[True for j in range(resolution[0]+1)] for k in range(resolution[1]+1)]
+        buildingBlocks = [[True for j in range(resolution[0]+1)] for k in range(resolution[1]+1)]
+        
         
         
         for i in range (0,resolution[0]):
@@ -156,14 +161,53 @@ class OpenStreetMap:
                 point = ogr.Geometry(ogr.wkbPoint)
                 coord = pointcloud_proc.cell_to_coords((i,j,0),resolution,matrix.bcube)
                 point.AddPoint(coord[0],coord[1])
+                
+                
+                if greenBlocks[i][j]:
+                    distance = int(point.Distance(self.green))
+                    
+                    #if distance > 0:
+                        #greenBlocks[i][j] = False
+                        
+                    for p in range (-distance, distance):
+                        for q in range (-distance, distance):
+                            #print (i+p,j+q)
+                            if ((i+p >= 0) & (i+p < resolution[0])) & ((j+q >= 0) & (j+q < resolution[1])) & (math.sqrt(math.pow(p,2) + math.pow(q,2)) < distance):
+                                greenBlocks[i+p][j+q] = False
+                                
+                if roadBlocks[i][j]:    
+                    distance = int(point.Distance(self.roads))    
+                    
+                    for p in range (-distance, distance):
+                        for q in range (-distance, distance):
+                            #print (i+p,j+q)
+                            if ((i+p >= 0) & (i+p < resolution[0])) & ((j+q >= 0) & (j+q < resolution[1])) & (math.sqrt(math.pow(p,2) + math.pow(q,2)) < distance - 2):
+                                #print (i+p,j+q)
+                                roadBlocks[i+p][j+q] = False
+                                
+                if buildingBlocks[i][j]:                     
+                    distance = int(point.Distance(self.buildings))  
+                                
+                    for p in range (-distance, distance):
+                        for q in range (-distance, distance):
+                            #print (i+p,j+q)
+                            if ((i+p >= 0) & (i+p < resolution[0])) & ((j+q >= 0) & (j+q < resolution[1])) & (math.sqrt(math.pow(p,2) + math.pow(q,2)) < distance - 5):
+                                #print (i+p,j+q)
+                                buildingBlocks[i+p][j+q] = False
+                
+                """
+                #24 seg
                 if point.Distance(self.green) == 0:
                     greenBlocks[i][j] = True
-                    
+                #32 seg
                 if point.Distance(self.roads) < 3:
                     roadBlocks[i][j] = True
-                    
+                #24 seg
                 if point.Distance(self.buildings) < 6:
                     buildingBlocks[i][j] = True
+                    
+                """
+                
         return (greenBlocks, roadBlocks, buildingBlocks)
 
 
@@ -180,7 +224,8 @@ def addNodesToMultiPol(dict, nodes, multiPol):
     
     poly = ogr.Geometry(ogr.wkbPolygon)
     poly.AddGeometry(ring)
-    
+    #plot(poly.Simplify(1))
+    #print "simplify"
     
     if poly.IsValid():
         multiPol.AddGeometry(poly)
@@ -201,7 +246,6 @@ def plot(geometry):
     
     ax = plt.figure().gca()
     coords = json.loads(geometry.ExportToJson())['coordinates']
-    
     x = [i for i,j,k in coords[0]]
     y = [j for i,j,k in coords[0]]
     ax.plot(x,y)
