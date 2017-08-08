@@ -46,8 +46,9 @@ class World:
             
             print("Creando matriz")
         
-            self.matrix = pointcloud_proc.SparseMatrix.create_from_coords(coords, resolution, bcube)
             
+            self.matrix = pointcloud_proc.SparseMatrix.create_from_coords(coords, resolution, bcube)
+            """
             self.myBuildings = [[False for j in range(resolution[0]+1)] for k in range(resolution[1]+1)]
             
             self.green = [[False for j in range(resolution[0]+1)] for k in range(resolution[1]+1)]
@@ -58,6 +59,7 @@ class World:
             
             
             self.openStreetMap = False
+            """
         else:
             print "El fichero es demasiado grande, puedes partirlo con la funcion splitFile()"
             
@@ -69,7 +71,7 @@ class World:
         
         
     def start(self):
-        w = worldDTO.WorldDTO(self.matrix, self.roads, self.green, self.buildings, self.myBuildings, self.openStreetMap)
+        w = worldDTO.WorldDTO(self.matrix)
         print "|||||||"
         print self.matrix.resolution[0]
         print "|||||||"
@@ -79,14 +81,14 @@ class World:
             print h
             print time.time()-start
             print "-----------"
-            
+        """
         self.matrix = w.matrix
         self.roads = w.roads
         self.green = w.green
         self.buildings = w.buildings
         self.myBuildings = w.myBuildings
         self.openStreetMap = w.openStreetMap
-            
+        """   
     """
     dest is the path of the file where the program exports the world 
     """
@@ -154,8 +156,3 @@ def splitFile(src, dest, x1, y1, x2, y2):
     outFile1 = File(dest, mode = "w", header = inFile.header)
     outFile1.points = points_kept
     outFile1.close()
-        
-    
-            
-    
-            

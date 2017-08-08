@@ -10,7 +10,7 @@ class DeleteIsolatedGroups(heuristic.Heuristic):
     If the average number of neighbors between them is low, delete the whole group.
     """
     def apply(self, world):
-        
+        #print "asdf"
         matrix = world.matrix
         buildings = world.buildings
         
@@ -21,12 +21,12 @@ class DeleteIsolatedGroups(heuristic.Heuristic):
         
         x, y, z = resolution
         cluster = [[[[] for i in range(z + 1)] for j in range(y/n + (y%n > 0))] for k in range(x/n + (x%n > 0))]
-        
+        #print "poiu"
         cells = matrix.values.keys()
         for (i,j,k) in cells:
             cluster[int(i/n)][int(j/n)][int(k)].append((i,j,k))
         
-        
+        #print "hola"
         neighborhood = []
         for p in range(0,resolution[0]/n):
             for q in range(0,resolution[1]/n):
@@ -53,5 +53,5 @@ class DeleteIsolatedGroups(heuristic.Heuristic):
                                 for (i,j,k) in cluster[p][q][r]:
                                     del matrix.values[(i,j,k)]
                                 
-                                         
+        #print "final"                       
         return world

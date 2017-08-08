@@ -24,48 +24,57 @@ class Join(heuristic.Heuristic):
         matrix = world.matrix
         green = world.green
         
-        new_matrix = pointcloud_proc.SparseMatrix(copy.copy(matrix.values), matrix.resolution, matrix.bcube)
+        #new_matrix = pointcloud_proc.SparseMatrix(copy.copy(matrix.values), matrix.resolution, matrix.bcube)
         neighbor = 0
         neighbor_colors = [0]*20
         num = 0
+        if len(self.param) == 0:
+            maxZ = matrix.resolution[2]
+        else:
+            maxZ = self.param[0]
         
-        z = self.param[0]
         
-        resolution = matrix.resolution
+        cells = matrix.values.keys()
         
-        for i in range(0,resolution[0]):
-            for j in range(0,resolution[1]):
-                for k in range(0,z):
-                    if (i,j,k) not in matrix.values:
-                        for p in [-1, 1]:
-                            if(i+p,j,k) in matrix.values:
-                                neighbor_colors[matrix.values[(i+p,j,k)][1]]+=1
-                                neighbor+=1
-                            if(i,j+p,k) in matrix.values:
-                                neighbor_colors[matrix.values[(i,j+p,k)][1]]+=1
-                                neighbor+=1
-                            if(i+p,j+p,k) in matrix.values:
-                                neighbor_colors[matrix.values[(i+p,j+p,k)][1]]+=1
-                                neighbor+=1
-                                
-                            if(i+p,j-p,k) in matrix.values:
-                                neighbor_colors[matrix.values[(i+p,j-p,k)][1]]+=1
-                                neighbor+=1
-                                
-                        if (neighbor > 3):
-                            #print neighbor
-                            #print neighbor_colors
-                            color = neighbor_colors.index(max(neighbor_colors))
+        for (i,j,k) in cells:
+            if k < maxZ:
+                for n in [0,1]:
+                    for q in [0,1]:
+                        if (n > 0) | (q > 0):
+                            x = int(i + n)
+                            y = int(j + q)
                             
-                            new_matrix.values[(i,j,k)] = (1,color)
-                            if (color == 16) & (green[i][j]):
-                                num+=1
-                                if num%30 == 0:
-                                    createTree(new_matrix,world,i,j,k)
-                        neighbor_colors = [0]*20
-                        neighbor = 0
+                            
+                            if (x,y,k) not in matrix.values:
+                                for p in [-1, 1]:
+                                    if(x+p,y,k) in matrix.values:
+                                        neighbor_colors[matrix.values[(x+p,y,k)][1]]+=1
+                                        neighbor+=1
+                                    if(x,y+p,k) in matrix.values:
+                                        neighbor_colors[matrix.values[(x,y+p,k)][1]]+=1
+                                        neighbor+=1
+                                    if(x+p,y+p,k) in matrix.values:
+                                        neighbor_colors[matrix.values[(x+p,y+p,k)][1]]+=1
+                                        neighbor+=1
+                                        
+                                    if(x+p,y-p,k) in matrix.values:
+                                        neighbor_colors[matrix.values[(x+p,y-p,k)][1]]+=1
+                                        neighbor+=1
+                                        
+                                if (neighbor > 3):
+                                    #print neighbor
+                                    #print neighbor_colors
+                                    color = neighbor_colors.index(max(neighbor_colors))
+                                    
+                                    matrix.values[(x,y,k)] = (1,color)
+                                    if (color == 16) & (green[x][y]):
+                                        num+=1
+                                        if num%30 == 0:
+                                            createTree(matrix,world,x,y,k)
+                                neighbor_colors = [0]*20
+                                neighbor = 0
                         
-        world.matrix = new_matrix
+        #world.matrix = new_matrix
         return world
     
     
@@ -78,16 +87,22 @@ def createTree(matrix,world,x,y,z):
     buildings = world.buildings
     
     space = True
-    if green[x][y] & (buildings[x][y] == False) & \
-        green[x+1][y] & (buildings[x+1][y] == False) & \
-        green[x-1][y] & (buildings[x-1][y] == False) & \
-        green[x][y+1] & (buildings[x][y+1] == False) & \
-        green[x][y-1] & (buildings[x][y-1] == False) & \
-        green[x+1][y+1] & (buildings[x+1][y+1] == False) & \
-        green[x+1][y-1] & (buildings[x+1][y-1] == False) & \
-        green[x-1][y-1] & (buildings[x-1][y-1] == False) & \
-        green[x-1][y+1] & (buildings[x-1][y+1] == False):
-        space = True
+    #print (x,y,z)
+    #print (x < (matrix.resolution[0]-1))
+    if (x > 0) & (x < (matrix.resolution[0])) & \
+        (y > 0) & (y < (matrix.resolution[1])):
+        if green[x][y] & (buildings[x][y] == False) & \
+            green[x+1][y] & (buildings[x+1][y] == False) & \
+            green[x-1][y] & (buildings[x-1][y] == False) & \
+            green[x][y+1] & (buildings[x][y+1] == False) & \
+            green[x][y-1] & (buildings[x][y-1] == False) & \
+            green[x+1][y+1] & (buildings[x+1][y+1] == False) & \
+            green[x+1][y-1] & (buildings[x+1][y-1] == False) & \
+            green[x-1][y-1] & (buildings[x-1][y-1] == False) & \
+            green[x-1][y+1] & (buildings[x-1][y+1] == False):
+            space = True
+        else: 
+            space = False
     else:
         space = False
         
