@@ -14,7 +14,7 @@ if __name__ == '__main__':
         world = eina_to_voxels.World(sys.argv[1])
         world.add(eina_to_voxels.UseOpenStreetMap([]))
         
-        for i in range(0,1):
+        for i in range(0,3):
             world.add(eina_to_voxels.MergeColors([])) 
         
         world.add(eina_to_voxels.DeleteIsolated([]))
@@ -26,10 +26,10 @@ if __name__ == '__main__':
         world.add(eina_to_voxels.ExpandBlocks([]))
         
         
-        for i in range(0,1):
+        for i in range(0,15):
             world.add(eina_to_voxels.Join([7]))
         
-        for i in range(0,1):
+        for i in range(0,4):
             world.add(eina_to_voxels.Join([]))
             
         world.add(eina_to_voxels.SetGreenZone([]))

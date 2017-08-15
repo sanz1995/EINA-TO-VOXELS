@@ -81,6 +81,7 @@ class World:
             print h
             print time.time()-start
             print "-----------"
+        self.matrix = w.matrix
         """
         self.matrix = w.matrix
         self.roads = w.roads

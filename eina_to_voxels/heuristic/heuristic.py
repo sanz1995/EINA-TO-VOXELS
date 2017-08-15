@@ -8,4 +8,7 @@ class Heuristic(object):
 
     def apply(self, world):
         raise NotImplementedError( "Should have implemented this" )
+    
+    def duration(self):
+        return 0 
 
