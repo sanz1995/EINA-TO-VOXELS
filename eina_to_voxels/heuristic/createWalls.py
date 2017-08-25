@@ -14,42 +14,37 @@ class CreateWalls(heuristic.Heuristic):
     def apply(self, world):
         h = 0
         
-        
-        
         matrix = world.matrix
         myBuildings = world.myBuildings
-        green = world.green
-        buildings = world.buildings
-        
-        if world.openStreetMap == False:
-            buildings = [[True for j in range(matrix.resolution[0]+1)] for k in range(matrix.resolution[1]+1)]
-    
         
         resolution = matrix.resolution
+        
         for i in range(0,resolution[0]):
             for j in range(0,resolution[1]):
                 h = 0
-                if (myBuildings[i][j] == False) & ((green[i][j] == False) | (buildings[i][j])):
+                if (myBuildings[i][j] == False):
                     for k in range(resolution[2],0,-1):
-                        
                         if (i,j,k) in matrix.values:
-                            
-                            surrounded = ((i+1,j,k) in matrix.values) & ((i-1,j,k) in matrix.values) & ((i,j+1,k) in matrix.values) & ((i,j-1,k) in matrix.values)
-                            if surrounded== False:
-                                
-                                ground = False
-                                for h in range(0,k):
-                                    if ground == False:
-                                        if (i,j,h) in matrix.values:
-                                            ground = True
-                                            g = h
-                                    else:
-                                        if (k-h > 2) & (h-g > 2):
-                                            if (h%4 != 0):
-                                                matrix.values[(i,j,h)] = (1,8)
-                                            else:
-                                                matrix.values[(i,j,h)] = (1,20)
+                            if matrix.values[(i,j,k)][1]<=16:
+                                surrounded = (((i+1,j,k) in matrix.values) | ((i+1,j,k-1) in matrix.values)) & \
+                                            (((i-1,j,k) in matrix.values) | ((i-1,j,k-1) in matrix.values)) & \
+                                            (((i,j+1,k) in matrix.values) | ((i,j+1,k-1) in matrix.values)) & \
+                                            (((i,j-1,k) in matrix.values) | ((i,j-1,k-1) in matrix.values))
+
+                                if surrounded== False:
+                                    ground = False
+                                    for h in range(0,k):
+                                        if ground == False:
+                                            if (i,j,h) in matrix.values:
+                                                ground = True
+                                                g = h
                                         else:
-                                            matrix.values[(i,j,h)] = (1,8)
-                            break
+                                            if (k-h > 2) & (h-g > 2):
+                                                if (h%4 != 0):
+                                                    matrix.values[(i,j,h)] = (1,8)
+                                                else:
+                                                    matrix.values[(i,j,h)] = (1,20)
+                                            else:
+                                                matrix.values[(i,j,h)] = (1,8)
+                                break
         return world

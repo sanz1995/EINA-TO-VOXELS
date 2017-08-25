@@ -19,6 +19,6 @@ class SetGreenZone(heuristic.Heuristic):
                     if green[i][j]:
                         for k in range(matrix.resolution[2]):
                             if (i,j,k) in matrix.values:
-                                if matrix.values[(i,j,k)][1]<=16:
+                                if (matrix.values[(i,j,k)][1]<=16) & (k<11):
                                     matrix.values[(i,j,k)] = (1,16)
         return world

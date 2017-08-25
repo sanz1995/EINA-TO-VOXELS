@@ -84,7 +84,7 @@ Create a tree in the coordinates given
 def createTree(matrix,world,x,y,z):
     
     green = world.green
-    buildings = world.buildings
+    buildings = world.myBuildings
     
     space = True
     #print (x,y,z)

@@ -97,10 +97,12 @@ class OpenStreetMap:
         
         if self.buildings.IsEmpty():
             for item in self.area:
+                #print item
                 if item.get("type")=="way":
                     data = item.get("data")
                     tag = data.get("tag")
                     if (tag.get("building") != "") & (tag.get("building") != None):
+                        #if data.get("uid")==393359:
                         addNodesToMultiPol(self.dict, data.get("nd"), self.buildings)
                 
                 elif item.get("type")=="relation":
@@ -224,12 +226,15 @@ def addNodesToMultiPol(dict, nodes, multiPol):
     
     poly = ogr.Geometry(ogr.wkbPolygon)
     poly.AddGeometry(ring)
-    #plot(poly.Simplify(1))
+    #plot(poly)
     #print "simplify"
     
-    if poly.IsValid():
+    #if poly.IsValid():
+    if True:
         multiPol.AddGeometry(poly)
-        
+        #print "asdfsadfasdfasdfasfd"
+    
+    #plot(poly)   
             
      
     

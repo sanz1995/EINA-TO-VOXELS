@@ -117,6 +117,19 @@ class SparseMatrix():
                     scores.append(math.sqrt(math.pow(color[0] - coords[3],2) + math.pow(color[1] - coords[4],2) + math.pow(color[2] - coords[5],2))*color[3])
                 
                     #scores.append((abs((color[0]-coords[3]))+abs((color[1]-coords[4]))+abs((color[2]-coords[5])))*color[3])
+                if ncell[2] > 6:
+                    scores[5] = scores[5]*4
+                    scores[4] = scores[4]*4
+                    scores[12] = scores[12]*4
+                    scores[14] = scores[14]*4
+                    scores[9] = scores[9]*1.1
+                    #scores[12] = scores[12]*4
+                    scores[13] = scores[13]*4
+                else:
+                    scores[9] = scores[9]*4
+                    scores[11] = scores[11]*4
+                
+                
                 
                 min = scores[0]
                 best = 0
